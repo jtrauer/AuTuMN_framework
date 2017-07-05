@@ -1,0 +1,8 @@
+*.pyc
+*/*.pyc
+.idea
+.spyderworkspace
+*png
+*graph
+*pkl
+autumn/logistic_fitting
