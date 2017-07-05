@@ -154,20 +154,18 @@ class ModelRunner:
         # incidence
         if 'incidence' in outputs_to_analyse:
 
-            # variable flows
-            for from_label, to_label, rate in self.model_dict[scenario].var_transfer_rate_flows:
-                if 'latent' in from_label and 'active' in to_label:
-                    incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
-                                          * self.model_dict[scenario].get_var_soln(rate) \
-                                          / total_denominator \
-                                          * 1e5
-                    epi_outputs['incidence'] = elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
-
             # fixed flows
             for from_label, to_label, rate in self.model_dict[scenario].fixed_transfer_rate_flows:
                 if 'latent' in from_label and 'active' in to_label:
                     incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
                                           * rate / total_denominator * 1e5
+                    epi_outputs['incidence'] = elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
+
+            # variable flows (note that there are currently none to which this is applicable, but could be in theory)
+            for from_label, to_label, rate in self.model_dict[scenario].var_transfer_rate_flows:
+                if 'latent' in from_label and 'active' in to_label:
+                    incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
+                                          * self.model_dict[scenario].get_var_soln(rate) / total_denominator * 1e5
                     epi_outputs['incidence'] = elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
 
         return epi_outputs
