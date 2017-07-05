@@ -79,7 +79,7 @@ class SimpleTbModel(BaseModel):
     Nested inheritance from BaseModel, which applies to any infectious disease generally.
     """
 
-    def __init__(self, fixed_parameters, interventions=[]):
+    def __init__(self, fixed_parameters, scenario=0, time_variant_parameters={}):
         """
         Inputs:
             interventions: List of interventions to be simulated in the run of the model
@@ -87,36 +87,23 @@ class SimpleTbModel(BaseModel):
 
         BaseModel.__init__(self)
 
-        # make interventions list an attribute of the object
-        self.interventions = interventions
+        self.scenario = scenario
+        self.time_variant_parameters = time_variant_parameters
 
         # define all compartments, initialise as empty and then populate
         model_compartments \
-            = ['susceptible', 'latent_early', 'latent_late', 'active', 'treatment_infect', 'treatment_noninfect']
+            = ['susceptible', 'susceptible_vaccinated', 'latent_early', 'latent_late', 'active', 'treatment_infect',
+               'treatment_noninfect']
         for each_compartment in model_compartments:
             self.set_compartment(each_compartment, 0.)
         self.set_compartment('susceptible', 1e6)
         self.set_compartment('active', 1.)
 
-        # additional compartments needed for interventions
-        if 'vaccination' in self.interventions:
-            self.set_compartment('susceptible_vaccinated', 0.)
-
         # parameter setting
         for parameter, value in fixed_parameters.items():
             self.set_param(parameter, value)
-
-        # example of a scaling parameter (case detection rate)
-        curve1 = make_sigmoidal_curve(y_high=2, y_low=0, x_start=1950, x_inflect=1970, multiplier=4)
-        curve2 = make_sigmoidal_curve(y_high=4, y_low=2, x_start=1995, x_inflect=2003, multiplier=3)
-        two_step_curve = lambda x: curve1(x) if x < 1990 else curve2(x)
-        self.set_scaleup_fn('program_rate_detect', two_step_curve)
-
-        # example of an intervention - BCG vaccination
-        if 'vaccination' in self.interventions:
-            self.set_param('int_vaccine_efficacy', .5)
-            vaccination_curve = make_sigmoidal_curve(y_high=.95, y_low=0, x_start=1921, x_inflect=2006, multiplier=3)
-            self.set_scaleup_fn('int_vaccination', vaccination_curve)
+        for parameter in self.time_variant_parameters[scenario]:
+            self.set_scaleup_fn(parameter, self.time_variant_parameters[scenario][parameter])
 
     def calculate_vars(self):
         """
@@ -135,11 +122,9 @@ class SimpleTbModel(BaseModel):
         self.vars['rate_force'] = \
             self.params['tb_n_contact'] * self.vars['infectious_population'] / self.vars['population']
 
-        # intervention
-        if 'vaccination' in self.interventions:
-            self.vars['rate_birth_vaccinated'] = self.vars['rate_birth'] * self.vars['int_vaccination']
-            self.vars['rate_birth'] -= self.vars['rate_birth_vaccinated']
-            self.vars['rate_force_vaccinated'] = self.vars['rate_force'] * self.params['int_vaccine_efficacy']
+        self.vars['rate_birth_vaccinated'] = self.vars['rate_birth'] * self.vars['prop_vaccination']
+        self.vars['rate_birth'] -= self.vars['rate_birth_vaccinated']
+        self.vars['rate_force_vaccinated'] = self.vars['rate_force'] * self.params['int_vaccine_efficacy']
 
     def set_flows(self):
         """
@@ -161,7 +146,7 @@ class SimpleTbModel(BaseModel):
         self.set_infection_death_rate_flow('active', 'tb_rate_death')
 
         # programmatic
-        self.set_var_transfer_rate_flow('active', 'treatment_infect', 'program_rate_detect')
+        self.set_var_transfer_rate_flow('active', 'treatment_infect', 'rate_program_detect')
         self.set_fixed_transfer_rate_flow('treatment_infect', 'treatment_noninfect', 'program_rate_completion_infect')
         self.set_fixed_transfer_rate_flow('treatment_infect', 'active', 'program_rate_default_infect')
         self.set_fixed_transfer_rate_flow('treatment_noninfect', 'susceptible', 'program_rate_completion_noninfect')
@@ -169,10 +154,8 @@ class SimpleTbModel(BaseModel):
         self.set_infection_death_rate_flow('treatment_infect', 'program_rate_death_infect')
         self.set_infection_death_rate_flow('treatment_noninfect', 'program_rate_death_noninfect')
 
-        # intervention
-        if 'vaccination' in self.interventions:
-            self.set_var_entry_rate_flow('susceptible_vaccinated', 'rate_birth_vaccinated')
-            self.set_var_transfer_rate_flow('susceptible_vaccinated', 'latent_early', 'rate_force_vaccinated')
+        self.set_var_entry_rate_flow('susceptible_vaccinated', 'rate_birth_vaccinated')
+        self.set_var_transfer_rate_flow('susceptible_vaccinated', 'latent_early', 'rate_force_vaccinated')
 
     def calculate_diagnostic_vars(self):
         """
@@ -195,57 +178,3 @@ class SimpleTbModel(BaseModel):
             if 'latent' in label:
                 self.vars['latent'] += (self.compartments[label] / self.vars['population'] * 1e5)
 
-
-##################
-### Run models ###
-##################
-
-if __name__ == '__main__':
-    """
-    Run and graph a simple TB model with time-variant case detection rate, then run the same model with an intervention
-    (BCG vaccination) applied.
-
-    Create a simple TB model without any interventions and a single scaling parameter for case detection rate
-    (as shown in the instantiation of the TB model object).
-    """
-
-    time_treatment = .5
-    fixed_parameters = {
-        'demo_rate_birth': 20. / 1e3,
-        'demo_rate_death': 1. / 65,
-        'tb_n_contact': 40.,
-        'tb_rate_earlyprogress': .1 / .5,
-        'tb_rate_lateprogress': .1 / 100.,
-        'tb_rate_stabilise': .9 / .5,
-        'tb_rate_recover': .6 / 3.,
-        'tb_rate_death': .4 / 3.,
-        'program_rate_completion_infect': .9 / time_treatment,
-        'program_rate_default_infect': .05 / time_treatment,
-        'program_rate_death_infect': .05 / time_treatment,
-        'program_rate_completion_noninfect': .9 / time_treatment,
-        'program_rate_default_noninfect': .05 / time_treatment,
-        'program_rate_death_noninfect': .05 / time_treatment
-    }
-
-    model = SimpleTbModel(fixed_parameters)
-    model.make_times(1900, 2050, .05)
-    model.integrate(method='explicit')
-
-    # graph outputs
-    out_dir = 'tb_graphs'
-    tool_kit.ensure_out_dir(out_dir)
-    model.make_graph(os.path.join(out_dir, 'workflow'))
-    make_plots(model, out_dir)
-    tool_kit.open_out_dir(out_dir)
-
-    # add vaccination as an intervention to the same model as run and presented immediately above
-    model = SimpleTbModel(fixed_parameters, ['vaccination'])
-    model.make_times(1900, 2050, .05)
-    model.integrate(method='explicit')
-
-    # graph outputs
-    out_dir = 'tb_vaccination_graphs'
-    tool_kit.ensure_out_dir(out_dir)
-    model.make_graph(os.path.join(out_dir, 'workflow'))
-    make_plots(model, out_dir)
-    tool_kit.open_out_dir(out_dir)

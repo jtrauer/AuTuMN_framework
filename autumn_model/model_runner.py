@@ -155,7 +155,7 @@ def is_parameter_value_valid(parameter):
 
 class ModelRunner:
 
-    def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=0):
+    def __init__(self, country, fixed_parameters, time_variant_parameters={}, mode='manual', scenarios_to_run=0):
         """
         Instantiation method for model runner - currently including many attributes that should be set externally, e.g.
         in the GUI(s).
@@ -166,10 +166,11 @@ class ModelRunner:
             mode: Whether scenario or uncertainty being run, set to either 'manual' or 'uncertainty'
         """
 
-        self.mode = mode
-        self.scenarios_to_run = scenarios_to_run
         self.country = country
         self.fixed_parameters = fixed_parameters
+        self.time_variant_parameters = time_variant_parameters
+        self.mode = mode
+        self.scenarios_to_run = scenarios_to_run
 
         # loading of inputs
         # self.inputs = data_processing.Inputs(gui_inputs, runtime_outputs, js_gui=js_gui)
@@ -258,7 +259,10 @@ class ModelRunner:
             # Name and initialise model
             # scenario_name = 'manual_' + tool_kit.find_scenario_string_from_number(scenario)
 
-            self.model_dict[scenario] = tb_model.SimpleTbModel(fixed_parameters)
+            self.model_dict[scenario] \
+                = tb_model.SimpleTbModel(fixed_parameters,
+                                         scenario,
+                                         time_variant_parameters=self.time_variant_parameters)
 
             # sort out times for scenario runs
             # if scenario is not None:
@@ -946,16 +950,23 @@ if __name__ == '__main__':
         'program_rate_death_infect': .05 / time_treatment,
         'program_rate_completion_noninfect': .9 / time_treatment,
         'program_rate_default_noninfect': .05 / time_treatment,
-        'program_rate_death_noninfect': .05 / time_treatment
+        'program_rate_death_noninfect': .05 / time_treatment,
+        'int_vaccine_efficacy': .5
     }
     scenarios_to_run = [0, 1]
-    two_step_curve = {}
+    time_variant_parameters = {}
     for scenario in scenarios_to_run:
+        time_variant_parameters[scenario] = {}
         curve1 = make_sigmoidal_curve(y_high=2, y_low=0, x_start=1950, x_inflect=1970, multiplier=4)
         curve2 = make_sigmoidal_curve(y_high=4, y_low=2, x_start=1995, x_inflect=2003, multiplier=3)
-        two_step_curve[scenario] = lambda x: curve1(x) if x < 1990 else curve2(x)
+        time_variant_parameters[scenario]['rate_program_detect'] \
+            = lambda x: curve1(x) if x < 1990 else curve2(x)
+        time_variant_parameters[scenario]['prop_vaccination'] \
+            = make_sigmoidal_curve(y_high=.95, y_low=0, x_start=1921, x_inflect=2006, multiplier=3)
+
     model_runner = ModelRunner(country='India',
                                fixed_parameters=fixed_parameters,
+                               time_variant_parameters=time_variant_parameters,
                                mode='manual',
                                scenarios_to_run=scenarios_to_run)
     model_runner.master_runner()
