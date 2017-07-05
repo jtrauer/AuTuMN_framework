@@ -29,8 +29,7 @@ class ModelRunner:
 
     def __init__(self, country, fixed_parameters, time_variant_parameters={}, mode='manual', scenarios_to_run=0):
         """
-        Instantiation method for model runner - currently including many attributes that should be set externally, e.g.
-        in the GUI(s).
+        Instantiation method for model runner.
 
         Args:
             country: String for country being simulated
@@ -45,12 +44,10 @@ class ModelRunner:
         self.scenarios_to_run = scenarios_to_run
 
         # loading of inputs
-        # self.inputs = data_processing.Inputs(gui_inputs, runtime_outputs, js_gui=js_gui)
         # self.inputs.read_and_load_data()
 
         # preparing for basic runs
         self.model_dict = {}
-        # self.interventions_to_cost = self.inputs.interventions_to_cost
 
         # Uncertainty-related attributes
         # self.is_last_run_success = False
@@ -75,17 +72,7 @@ class ModelRunner:
         # output-related attributes
         self.epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']
         self.epi_outputs = {}
-        # self.epi_outputs_dict = {}
-        # self.epi_outputs_integer_dict = {}
         # self.epi_outputs_uncertainty = {}
-        # self.epi_outputs_uncertainty_centiles = None
-        # self.cost_outputs = {}
-        # self.cost_outputs_dict = {}
-        # self.cost_outputs_integer_dict = {}
-        # self.cost_outputs_uncertainty = {}
-        # self.cost_outputs_uncertainty_centiles = None
-        # self.additional_cost_types = ['inflated', 'discounted', 'discounted_inflated']
-        # self.cost_types = self.additional_cost_types + ['raw']
 
     ###############################################
     ### Master methods to run all other methods ###
