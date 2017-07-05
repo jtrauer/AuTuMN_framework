@@ -200,10 +200,9 @@ class ModelRunner:
         # self.accepted_no_burn_in_indices = []
         # self.random_start = False  # whether to start from a random point, as opposed to the manually calibrated value
         #
-        # # Output-related attributes
-        # self.epi_outputs_to_analyse = ['population', 'incidence', 'true_incidence', 'prevalence', 'true_prevalence',
-        #                                'mortality', 'true_mortality', 'notifications']
-        # self.epi_outputs = {}
+        # output-related attributes
+        self.epi_outputs_to_analyse = ['population', 'incidence']
+        self.epi_outputs = {}
         # self.epi_outputs_dict = {}
         # self.epi_outputs_integer_dict = {}
         # self.epi_outputs_uncertainty = {}
@@ -237,9 +236,7 @@ class ModelRunner:
 
         for scenario in self.scenarios_to_run:
 
-            # Name and initialise model
-            # scenario_name = 'manual_' + tool_kit.find_scenario_string_from_number(scenario)
-
+            # name and initialise model
             self.model_dict[scenario] \
                 = tb_model.SimpleTbModel(fixed_parameters,
                                          scenario,
@@ -257,13 +254,8 @@ class ModelRunner:
             self.model_dict[scenario].integrate(method='explicit')
 
             # model interpretation for each scenario
-            # self.epi_outputs[scenario_name] \
-            #     = self.find_epi_outputs(scenario_name,
-            #                             outputs_to_analyse=self.epi_outputs_to_analyse,
-            #                             stratifications=[self.model_dict[scenario_name].agegroups,
-            #                                              self.model_dict[scenario_name].riskgroups])
-            # if len(self.model_dict[scenario_name].interventions_to_cost) > 0:
-            #     self.find_cost_outputs(scenario_name)
+            self.epi_outputs[scenario] \
+                = self.find_epi_outputs(scenario, outputs_to_analyse=self.epi_outputs_to_analyse)
 
     # def prepare_new_model_from_baseline(self, run_type, scenario_name):
     #
@@ -283,32 +275,34 @@ class ModelRunner:
     #     self.model_dict[scenario_name].loaded_compartments = \
     #         self.model_dict[run_type + '_baseline'].load_state(scenario_start_time_index)
     #
-    # ####################################
-    # ### Model interpretation methods ###
-    # ####################################
-    #
-    # def find_epi_outputs(self, scenario, outputs_to_analyse, stratifications=[]):
-    #     """
-    #     Method to extract all requested epidemiological outputs from the models. Intended ultimately to be flexible\
-    #     enough for use for analysis of scenarios, uncertainty and optimisation.
-    #     """
-    #
-    #     epi_outputs = {'times': self.model_dict[scenario].times}
-    #
-    #     # Unstratified outputs______________________________________________________________________________________
-    #     # Initialise lists
-    #     for output in outputs_to_analyse:
-    #         epi_outputs[output] = [0.] * len(epi_outputs['times'])
-    #         for strain in self.model_dict[scenario].strains:
-    #             epi_outputs[output + strain] = [0.] * len(epi_outputs['times'])
-    #
-    #     # Population
-    #     if 'population' in outputs_to_analyse:
-    #         for compartment in self.model_dict[scenario].compartments:
-    #             epi_outputs['population'] \
-    #                 = elementwise_list_addition(self.model_dict[scenario].get_compartment_soln(compartment),
-    #                                             epi_outputs['population'])
-    #     # Replace zeroes with small numbers for division
+    ####################################
+    ### Model interpretation methods ###
+    ####################################
+
+    def find_epi_outputs(self, scenario, outputs_to_analyse, stratifications=[]):
+        """
+        Method to extract all requested epidemiological outputs from the models. Intended ultimately to be flexible\
+        enough for use for analysis of scenarios, uncertainty and optimisation.
+        """
+
+        epi_outputs = {'times': self.model_dict[scenario].times}
+
+        # unstratified outputs______________________________________________________________________________________
+        # initialise lists
+        for output in outputs_to_analyse:
+            epi_outputs[output] = [0.] * len(epi_outputs['times'])
+
+        # population
+        if 'population' in outputs_to_analyse:
+            for compartment in self.model_dict[scenario].compartments:
+                epi_outputs['population'] \
+                    = elementwise_list_addition(self.model_dict[scenario].get_compartment_soln(compartment),
+                                                epi_outputs['population'])
+
+        return epi_outputs
+
+
+                # Replace zeroes with small numbers for division
     #     total_denominator = tool_kit.prepare_denominator(epi_outputs['population'])
     #
     #     # To allow calculation by strain and the total output
@@ -462,7 +456,6 @@ class ModelRunner:
     #                         epi_outputs['prevalence' + stratum] \
     #                             = elementwise_list_addition(prevalence_increment, epi_outputs['prevalence' + stratum])
     #
-    #     return epi_outputs
     #
     # def find_population_fractions(self, stratifications=[]):
     #
@@ -478,77 +471,6 @@ class ModelRunner:
     #                     self.epi_outputs[scenario]['fraction' + stratum] \
     #                         = elementwise_list_division(self.epi_outputs[scenario]['population' + stratum],
     #                                                     self.epi_outputs[scenario]['population'])
-    #
-    # def find_cost_outputs(self, scenario_name):
-    #
-    #     """
-    #     Master method to call methods to find and update costs below.
-    #
-    #     Args:
-    #         scenario_name: String for the name of the model being costed.
-    #     """
-    #
-    #     self.cost_outputs[scenario_name] = self.find_raw_cost_outputs(scenario_name)
-    #     self.cost_outputs[scenario_name]['raw_cost_all_programs'] = self.find_costs_all_programs(scenario_name)
-    #     self.cost_outputs[scenario_name].update(self.find_adjusted_costs(scenario_name))
-    #
-    # def find_raw_cost_outputs(self, scenario_name):
-    #
-    #     """
-    #     Add cost dictionaries to cost_outputs attribute.
-    #     """
-    #
-    #     cost_outputs = {'times': self.model_dict[scenario_name].cost_times}
-    #     for i, intervention \
-    #             in enumerate(self.interventions_to_cost[tool_kit.find_scenario_number_from_string(scenario_name)]):
-    #         cost_outputs['raw_cost_' + intervention] = self.model_dict[scenario_name].costs[:, i]
-    #     return cost_outputs
-    #
-    # def find_costs_all_programs(self, scenario_name):
-    #
-    #     """
-    #     Sum costs across all programs and populate to cost_outputs dictionary for each scenario.
-    #     """
-    #
-    #     costs_all_programs \
-    #         = [0.] * len(self.cost_outputs[scenario_name]['raw_cost_' + self.interventions_to_cost[
-    #         tool_kit.find_scenario_number_from_string(scenario_name)][0]])
-    #     for i in self.interventions_to_cost[tool_kit.find_scenario_number_from_string(scenario_name)]:
-    #         costs_all_programs \
-    #             = elementwise_list_addition(self.cost_outputs[scenario_name]['raw_cost_' + i], costs_all_programs)
-    #     return costs_all_programs
-    #
-    # def find_adjusted_costs(self, scenario_name):
-    #
-    #     """
-    #     Find costs adjusted for inflation and discounting.
-    #
-    #     Args:
-    #         scenario_name: Scenario being costed
-    #     """
-    #
-    #     # Get some preliminary parameters
-    #     year_current = self.inputs.model_constants['recent_time']
-    #     current_cpi = self.inputs.scaleup_fns[None]['econ_cpi'](year_current)
-    #     discount_rate = self.inputs.model_constants['econ_discount_rate']
-    #
-    #     # Loop over interventions to be costed and cost types to calculate costs
-    #     cost_outputs = {}
-    #     for intervention in self.interventions_to_cost[tool_kit.find_scenario_number_from_string(scenario_name)] \
-    #             + ['all_programs']:
-    #         for cost_type in self.additional_cost_types:
-    #             cost_outputs[cost_type + '_cost_' + intervention] = []
-    #             for t, time in enumerate(self.cost_outputs[scenario_name]['times']):
-    #                 cost_outputs[cost_type + '_cost_' + intervention].append(
-    #                     autumn.economics.get_adjusted_cost(self.cost_outputs[scenario_name]['raw_cost_'
-    #                                                                                         + intervention][t],
-    #                                                        cost_type,
-    #                                                        current_cpi,
-    #                                                        self.inputs.scaleup_fns[None]['econ_cpi'](time),
-    #                                                        discount_rate,
-    #                                                        max(0., (time - year_current))))
-    #
-    #     return cost_outputs
     #
     # def find_uncertainty_centiles(self, full_uncertainty_outputs):
     #
