@@ -73,7 +73,7 @@ class ModelRunner:
         # self.random_start = False  # whether to start from a random point, as opposed to the manually calibrated value
         #
         # output-related attributes
-        self.epi_outputs_to_analyse = ['population', 'incidence']
+        self.epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']
         self.epi_outputs = {}
         # self.epi_outputs_dict = {}
         # self.epi_outputs_integer_dict = {}
@@ -122,13 +122,13 @@ class ModelRunner:
 
             # model interpretation for each scenario
             self.epi_outputs[scenario] \
-                = self.find_epi_outputs(scenario, outputs_to_analyse=self.epi_outputs_to_analyse)
+                = self.find_epi_outputs(scenario)
 
     ####################################
     ### Model interpretation methods ###
     ####################################
 
-    def find_epi_outputs(self, scenario, outputs_to_analyse, stratifications=[]):
+    def find_epi_outputs(self, scenario, stratifications=[]):
         """
         Method to extract all requested epidemiological outputs from the models. Intended ultimately to be flexible\
         enough for use for analysis of scenarios, uncertainty and optimisation.
@@ -138,11 +138,11 @@ class ModelRunner:
 
         # unstratified outputs______________________________________________________________________________________
         # initialise lists
-        for output in outputs_to_analyse:
+        for output in self.epi_outputs_to_analyse:
             epi_outputs[output] = [0.] * len(epi_outputs['times'])
 
         # population
-        if 'population' in outputs_to_analyse:
+        if 'population' in self.epi_outputs_to_analyse:
             for compartment in self.model_dict[scenario].compartments:
                 epi_outputs['population'] \
                     = elementwise_list_addition(self.model_dict[scenario].get_compartment_soln(compartment),
@@ -152,54 +152,35 @@ class ModelRunner:
         total_denominator = prepare_denominator(epi_outputs['population'])
 
         # incidence
-        if 'incidence' in outputs_to_analyse:
+        if 'incidence' in self.epi_outputs_to_analyse:
 
             # fixed flows
             for from_label, to_label, rate in self.model_dict[scenario].fixed_transfer_rate_flows:
                 if 'latent' in from_label and 'active' in to_label:
-                    incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
-                                          * rate / total_denominator * 1e5
+                    incidence_increment \
+                        = self.model_dict[scenario].get_compartment_soln(from_label) * rate / total_denominator * 1e5
                     epi_outputs['incidence'] = elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
 
             # variable flows (note that there are currently none to which this is applicable, but could be in theory)
             for from_label, to_label, rate in self.model_dict[scenario].var_transfer_rate_flows:
                 if 'latent' in from_label and 'active' in to_label:
-                    incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
-                                          * self.model_dict[scenario].get_var_soln(rate) / total_denominator * 1e5
+                    incidence_increment \
+                        = self.model_dict[scenario].get_compartment_soln(from_label) \
+                          * self.model_dict[scenario].get_var_soln(rate) / total_denominator * 1e5
                     epi_outputs['incidence'] = elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
+
+        # prevalence
+        if 'prevalence' in self.epi_outputs_to_analyse:
+            for label in self.model_dict[scenario].labels:
+                if 'susceptible' not in label and 'latent' not in label:
+                    prevalence_increment = self.model_dict[scenario].get_compartment_soln(label) \
+                                           / total_denominator * 1e5
+                    epi_outputs['prevalence'] \
+                        = elementwise_list_addition(prevalence_increment, epi_outputs['prevalence'])
 
         return epi_outputs
 
-    #     # Notifications
-    #     if 'notifications' in outputs_to_analyse:
-    #         for strain in strains:
-    #             for from_label, to_label, rate in self.model_dict[scenario].var_transfer_rate_flows:
-    #                 if 'active' in from_label and 'detect' in to_label and strain in to_label:
-    #                     notifications_increment \
-    #                         = self.model_dict[scenario].get_compartment_soln(from_label) \
-    #                           * self.model_dict[scenario].get_var_soln(rate)
-    #                     if '_age' in from_label and tool_kit.is_upper_age_limit_at_or_below(from_label, 15.):
-    #                         notifications_increment *= self.inputs.model_constants['program_prop_child_reporting']
-    #                     epi_outputs['notifications' + strain] \
-    #                         = elementwise_list_addition(notifications_increment, epi_outputs['notifications' + strain])
-    #
-    #     # Prevalence
-    #     if 'prevalence' in outputs_to_analyse:
-    #         for strain in strains:
-    #             for label in self.model_dict[scenario].labels:
-    #                 if 'susceptible' not in label and 'latent' not in label and strain in label:
-    #                     prevalence_increment = self.model_dict[scenario].get_compartment_soln(label) \
-    #                                            / total_denominator \
-    #                                            * 1e5
-    #                     epi_outputs['true_prevalence' + strain] \
-    #                         = elementwise_list_addition(prevalence_increment,
-    #                                                     epi_outputs['true_prevalence' + strain])
-    #                     # Reduce paediatric contribution
-    #                     if '_age' in label and tool_kit.is_upper_age_limit_at_or_below(label, 15.):
-    #                         prevalence_increment *= self.inputs.model_constants['program_prop_child_reporting']
-    #                     epi_outputs['prevalence' + strain] \
-    #                         = elementwise_list_addition(prevalence_increment,
-    #                                                     epi_outputs['prevalence' + strain])
+
     #
     #     # Stratified outputs________________________________________________________________________________________
     #     # Currently not bothering to do this for each strain
