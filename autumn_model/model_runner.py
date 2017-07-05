@@ -1,156 +1,28 @@
 
-# import tool_kit
-# import model
-# import os
-# import data_processing
-# import numpy
-# import datetime
-# from scipy.stats import norm, beta
-# from Tkinter import *
-# from scipy.optimize import minimize
-# from random import uniform
-# import matplotlib.pyplot as plt
-# from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-# import outputs
-# import autumn.economics
-# import itertools
-# import time
-# import eventlet
-# from flask_socketio import emit
-# from numpy import isfinite
 import tb_model
 from basepop import BaseModel, make_sigmoidal_curve
 
 
-
-def generate_candidates(n_candidates, param_ranges_unc):
-
+def prepare_denominator(list_to_prepare):
     """
-    Function for generating candidate parameters.
+    Method to safely divide a list of numbers while ignoring zero denominators.
+
+    Args:
+        list_to_prepare: The list to be used as a denominator
+    Returns:
+        The list with zeros replaced with small numbers
     """
 
-    # Dictionary for storing candidates
-    param_candidates = {}
-    for param_dict in param_ranges_unc:
-
-        # Find bounds of parameter
-        bound_low, bound_high = param_dict['bounds'][0], param_dict['bounds'][1]
-
-        # Draw from distribution
-        if param_dict['distribution'] == 'beta':
-            x = bound_low + numpy.random.beta(2., 2., n_candidates) * (bound_high - bound_low)
-        elif param_dict['distribution'] == 'uniform':
-            x = numpy.random.uniform(bound_low, bound_high, n_candidates)
-        else:
-            x = 0.5*(param_dict['bounds'][0] + param_dict['bounds'][1])
-            print "Unsupported statistical distribution specified to generate a candidate. Returned the midpoint of the range."
-
-        # Return values
-        param_candidates[param_dict['key']] = x
-    return param_candidates
+    return [list_to_prepare[i] if list_to_prepare[i] > 0. else 1e-10 for i in range(len(list_to_prepare))]
 
 
 def elementwise_list_addition(increment, list_to_increment):
-
     """
     Simple method to element-wise increment a list by the values in another list of the same length.
     """
 
     assert len(increment) == len(list_to_increment), 'Attempted to add two lists of different lengths'
     return [sum(x) for x in zip(list_to_increment, increment)]
-
-
-def elementwise_list_division(numerator, denominator):
-
-    """
-    Simple method to element-wise increment a list by the values in another list of the same length.
-    """
-
-    assert len(numerator) == len(denominator), 'Attempted to divide two lists of different lengths'
-    return [n / d for n, d in zip(numerator, denominator)]
-
-
-def find_integer_dict_from_float_dict(float_dict):
-
-    # Method may be redundant with optimal code
-
-    integer_dict = {}
-    times = float_dict.keys()
-    times.sort()
-    start = numpy.floor(times[0])
-    finish = numpy.floor(times[-1])
-    float_years = numpy.linspace(start, finish, finish - start + 1.)
-    for year in float_years:
-        key = [t for t in times if t >= year][0]
-        integer_dict[int(key)] = float_dict[key]
-    return integer_dict
-
-
-def extract_integer_dicts(models_to_analyse={}, dict_to_extract_from={}):
-
-    # Method may be redundant with optimal code
-
-    integer_dict = {}
-    for scenario in models_to_analyse:
-        integer_dict[scenario] = {}
-        for output in dict_to_extract_from[scenario]:
-            integer_dict[scenario][output] \
-                = find_integer_dict_from_float_dict(dict_to_extract_from[scenario][output])
-    return integer_dict
-
-
-def get_output_dicts_from_lists(models_to_analyse={}, output_dict_of_lists={}):
-
-    """
-    Convert output lists to dictionaries. Also may ultimately be unnecessary.
-    """
-
-    output_dictionary = {}
-    for scenario in models_to_analyse:
-        output_dictionary[scenario] = {}
-        for output in output_dict_of_lists[scenario]:
-            if output != 'times':
-                output_dictionary[scenario][output] \
-                    = dict(zip(output_dict_of_lists[scenario]['times'], output_dict_of_lists[scenario][output]))
-    return output_dictionary
-
-
-def find_uncertainty_output_weights(list, method, relative_weights=[1., 2.]):
-
-    """
-    Creates a set of "weights" to determine the proportion of the log-likelihood to be contributed by the years
-    considered in the calibration.
-
-    Args:
-        list: A list of the years that the weights are to be applied to.
-        method: Choice of method.
-        relative_weights: Relative size of the starting and ending weights if method is 1.
-    """
-
-    # Linearly scaling weights summing to one
-    if method == 1:
-        weights = []
-        if len(list) == 1:
-            return [1.]
-        else:
-            weights = numpy.linspace(relative_weights[0], relative_weights[1], num=len(list))
-            return [i / sum(weights) for i in weights]
-
-    # Equally distributed weights summing to one
-    elif method == 2:
-        return [1. / float(len(list))] * len(list)
-
-    # All weights equal to one
-    elif method == 3:
-        return [1.] * len(list)
-
-
-def is_parameter_value_valid(parameter):
-    """
-    Determine whether a number (typically a parameter value) is finite and positive.
-    """
-
-    return isfinite(parameter) and parameter > 0.
 
 
 class ModelRunner:
@@ -242,11 +114,6 @@ class ModelRunner:
                                          scenario,
                                          time_variant_parameters=self.time_variant_parameters)
 
-            # sort out times for scenario runs
-            # if scenario is not None:
-            #     scenario_name = 'manual_' + tool_kit.find_scenario_string_from_number(scenario)
-            #     self.prepare_new_model_from_baseline('manual', scenario_name)
-
             # describe model and integrate
             print('Running scenario ' + str(scenario) + ' conditions for ' + self.country +
                   ' using single parameter set')
@@ -257,24 +124,6 @@ class ModelRunner:
             self.epi_outputs[scenario] \
                 = self.find_epi_outputs(scenario, outputs_to_analyse=self.epi_outputs_to_analyse)
 
-    # def prepare_new_model_from_baseline(self, run_type, scenario_name):
-    #
-    #     """
-    #     Method to set the start time of a model and load the compartment values from the baseline run.
-    #
-    #     Args:
-    #         run_type: The type of run for the model object to be set
-    #         scenario_name: Either the scenario name or optimisation if during optimisation run
-    #     """
-    #
-    #     scenario_start_time_index = \
-    #         self.model_dict[run_type + '_baseline'].find_time_index(self.inputs.model_constants['recent_time'])
-    #     start_time = self.model_dict[run_type + '_baseline'].times[scenario_start_time_index]
-    #     self.model_dict[scenario_name].start_time = start_time
-    #     self.model_dict[scenario_name].next_time_point = start_time
-    #     self.model_dict[scenario_name].loaded_compartments = \
-    #         self.model_dict[run_type + '_baseline'].load_state(scenario_start_time_index)
-    #
     ####################################
     ### Model interpretation methods ###
     ####################################
@@ -299,55 +148,30 @@ class ModelRunner:
                     = elementwise_list_addition(self.model_dict[scenario].get_compartment_soln(compartment),
                                                 epi_outputs['population'])
 
+        # replace zeroes with small numbers for division
+        total_denominator = prepare_denominator(epi_outputs['population'])
+
+        # incidence
+        if 'incidence' in outputs_to_analyse:
+
+            # variable flows
+            for from_label, to_label, rate in self.model_dict[scenario].var_transfer_rate_flows:
+                if 'latent' in from_label and 'active' in to_label:
+                    incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
+                                          * self.model_dict[scenario].get_var_soln(rate) \
+                                          / total_denominator \
+                                          * 1e5
+                    epi_outputs['incidence'] = elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
+
+            # fixed flows
+            for from_label, to_label, rate in self.model_dict[scenario].fixed_transfer_rate_flows:
+                if 'latent' in from_label and 'active' in to_label:
+                    incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
+                                          * rate / total_denominator * 1e5
+                    epi_outputs['incidence'] = elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
+
         return epi_outputs
 
-
-                # Replace zeroes with small numbers for division
-    #     total_denominator = tool_kit.prepare_denominator(epi_outputs['population'])
-    #
-    #     # To allow calculation by strain and the total output
-    #     strains = self.model_dict[scenario].strains + ['']
-    #
-    #     # Incidence
-    #     if 'incidence' in outputs_to_analyse:
-    #         for strain in strains:
-    #             # Variable flows
-    #             for from_label, to_label, rate in self.model_dict[scenario].var_transfer_rate_flows:
-    #                 if 'latent' in from_label and 'active' in to_label and strain in to_label:
-    #                     incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
-    #                                              * self.model_dict[scenario].get_var_soln(rate) \
-    #                                              / total_denominator \
-    #                                              * 1e5
-    #                     epi_outputs['true_incidence' + strain] \
-    #                         = elementwise_list_addition(incidence_increment,
-    #                                                     epi_outputs['true_incidence' + strain])
-    #                     # Reduce paediatric contribution
-    #                     if '_age' in from_label and tool_kit.is_upper_age_limit_at_or_below(from_label, 15.):
-    #                         incidence_increment *= self.inputs.model_constants['program_prop_child_reporting']
-    #                     epi_outputs['incidence' + strain] \
-    #                         = elementwise_list_addition(incidence_increment,
-    #                                                     epi_outputs['incidence' + strain])
-    #             # Fixed flows
-    #             for from_label, to_label, rate in self.model_dict[scenario].fixed_transfer_rate_flows:
-    #                 if 'latent' in from_label and 'active' in to_label and strain in to_label:
-    #                     incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
-    #                                              * rate / total_denominator * 1e5
-    #                     epi_outputs['true_incidence' + strain] \
-    #                         = elementwise_list_addition(incidence_increment,
-    #                                                     epi_outputs['true_incidence' + strain])
-    #                     # Reduce paedatric contribution
-    #                     if '_age' in from_label and tool_kit.is_upper_age_limit_at_or_below(from_label, 15.):
-    #                         incidence_increment *= self.inputs.model_constants['program_prop_child_reporting']
-    #                     epi_outputs['incidence' + strain] \
-    #                         = elementwise_list_addition(incidence_increment,
-    #                                                     epi_outputs['incidence' + strain])
-    #         # Find percentage incidence by strain
-    #         if len(self.model_dict[scenario].strains) > 1:
-    #             for strain in self.model_dict[scenario].strains:
-    #                 epi_outputs['perc_incidence' + strain] \
-    #                     = [i / j * 1e2 for i, j in zip(epi_outputs['incidence' + strain],
-    #                                                    tool_kit.prepare_denominator(epi_outputs['incidence']))]
-    #
     #     # Notifications
     #     if 'notifications' in outputs_to_analyse:
     #         for strain in strains:
