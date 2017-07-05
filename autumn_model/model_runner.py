@@ -200,25 +200,6 @@ class ModelRunner:
         # self.accepted_no_burn_in_indices = []
         # self.random_start = False  # whether to start from a random point, as opposed to the manually calibrated value
         #
-        # # Optimisation attributes
-        # self.optimisation = False  # Leave True even if loading optimisation results
-        # self.indicator_to_minimise = 'incidence'  # Currently must be 'incidence' or 'mortality'
-        # self.annual_envelope = [112.5e6]  # Size of funding envelope in scenarios to be run
-        # self.save_opti = True
-        # self.load_opti = False  # Optimisation will not be run if on
-        # self.total_funding = None  # Funding for entire period
-        # self.f_tol = {'incidence': 0.5,
-        #               'mortality': 0.05}  # Stopping condition for optimisation algorithm (differs by indicator)
-        # self.year_end_opti = 2035.  # Model is run until that date during optimisation
-        # self.acceptable_combinations = []  # List of intervention combinations that can be considered with funding
-        # self.opti_results = {}  # Store all the results that we need for optimisation
-        # self.optimised_combinations = []
-        # self.optimal_allocation = {}
-        # self.interventions_considered_for_opti \
-        #     = ['engage_lowquality', 'xpert', 'cxrxpertacf_prison', 'cxrxpertacf_urbanpoor', 'ipt_age0to5', 'intensive_screening']  # Interventions that must appear in optimal plan
-        # self.interventions_forced_for_opti \
-        #     = ['engage_lowquality', 'ipt_age0to5', 'intensive_screening']
-        #
         # # Output-related attributes
         # self.epi_outputs_to_analyse = ['population', 'incidence', 'true_incidence', 'prevalence', 'true_prevalence',
         #                                'mortality', 'true_mortality', 'notifications']
@@ -957,12 +938,16 @@ if __name__ == '__main__':
     time_variant_parameters = {}
     for scenario in scenarios_to_run:
         time_variant_parameters[scenario] = {}
-        curve1 = make_sigmoidal_curve(y_high=2, y_low=0, x_start=1950, x_inflect=1970, multiplier=4)
-        curve2 = make_sigmoidal_curve(y_high=4, y_low=2, x_start=1995, x_inflect=2003, multiplier=3)
+        curve1 = make_sigmoidal_curve(y_high=2, y_low=0, x_start=1950, x_inflect=1994, multiplier=4)
+        curve2 = make_sigmoidal_curve(y_high=4, y_low=2, x_start=1994, x_inflect=2005, multiplier=3)
         time_variant_parameters[scenario]['rate_program_detect'] \
             = lambda x: curve1(x) if x < 1990 else curve2(x)
         time_variant_parameters[scenario]['prop_vaccination'] \
             = make_sigmoidal_curve(y_high=.95, y_low=0, x_start=1921, x_inflect=2006, multiplier=3)
+    complete_vaccination_scenario \
+        = make_sigmoidal_curve(y_high=1., y_low=0.95, x_start=2015, x_inflect=2016, multiplier=3)
+    time_variant_parameters[1]['prop_vaccination'] \
+        = lambda x: time_variant_parameters[0]['prop_vaccination'](x) if x < 2015 else complete_vaccination_scenario(x)
 
     model_runner = ModelRunner(country='India',
                                fixed_parameters=fixed_parameters,
