@@ -128,15 +128,14 @@ class ModelRunner:
     ### Model interpretation methods ###
     ####################################
 
-    def find_epi_outputs(self, scenario, stratifications=[]):
+    def find_epi_outputs(self, scenario):
         """
-        Method to extract all requested epidemiological outputs from the models. Intended ultimately to be flexible\
-        enough for use for analysis of scenarios, uncertainty and optimisation.
+        Method to extract requested epidemiological outputs from the models.
         """
 
+        # first create a list of model times as de facto keys for the series of lists created below
         epi_outputs = {'times': self.model_dict[scenario].times}
 
-        # unstratified outputs______________________________________________________________________________________
         # initialise lists
         for output in self.epi_outputs_to_analyse:
             epi_outputs[output] = [0.] * len(epi_outputs['times'])
@@ -180,85 +179,6 @@ class ModelRunner:
 
         return epi_outputs
 
-
-    #
-    #     # Stratified outputs________________________________________________________________________________________
-    #     # Currently not bothering to do this for each strain
-    #     for stratification in stratifications:
-    #         if len(stratification) > 1:
-    #             for stratum in stratification:
-    #
-    #                 # Initialise lists
-    #                 for output in outputs_to_analyse:
-    #                     epi_outputs[output + stratum] = [0.] * len(epi_outputs['times'])
-    #
-    #                 # Population
-    #                 if 'population' in outputs_to_analyse:
-    #                     for compartment in self.model_dict[scenario].compartments:
-    #                         if stratum in compartment:
-    #                             epi_outputs['population' + stratum] \
-    #                                 = elementwise_list_addition(self.model_dict[scenario].get_compartment_soln(compartment),
-    #                                                             epi_outputs['population' + stratum])
-    #
-    #                 # The population denominator to be used with zeros replaced with small numbers
-    #                 stratum_denominator \
-    #                     = tool_kit.prepare_denominator(epi_outputs['population' + stratum])
-    #
-    #                 # Incidence
-    #                 if 'incidence' in outputs_to_analyse:
-    #                     # Variable flows
-    #                     for from_label, to_label, rate in self.model_dict[scenario].var_transfer_rate_flows:
-    #                         if 'latent' in from_label and 'active' in to_label and stratum in from_label:
-    #                             incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
-    #                                                   * self.model_dict[scenario].get_var_soln(rate) \
-    #                                                   / stratum_denominator \
-    #                                                   * 1e5
-    #                             epi_outputs['true_incidence' + stratum] \
-    #                                 = elementwise_list_addition(incidence_increment,
-    #                                                             epi_outputs['true_incidence' + stratum])
-    #                             # Reduce paediatric contribution
-    #                             if '_age' in from_label \
-    #                                     and tool_kit.is_upper_age_limit_at_or_below(from_label, 15.):
-    #                                 incidence_increment *= self.inputs.model_constants[
-    #                                     'program_prop_child_reporting']
-    #                             epi_outputs['incidence' + stratum] \
-    #                                 = elementwise_list_addition(incidence_increment,
-    #                                                             epi_outputs['incidence' + stratum])
-    #
-    #                     # Fixed flows
-    #                     for from_label, to_label, rate in self.model_dict[scenario].fixed_transfer_rate_flows:
-    #                         if 'latent' in from_label and 'active' in to_label and stratum in from_label:
-    #                             incidence_increment = self.model_dict[scenario].get_compartment_soln(from_label) \
-    #                                                   * rate \
-    #                                                   / stratum_denominator \
-    #                                                   * 1e5
-    #                             epi_outputs['true_incidence' + stratum] \
-    #                                 = elementwise_list_addition(incidence_increment,
-    #                                                             epi_outputs['true_incidence' + stratum])
-    #                             # Reduce paediatric contribution
-    #                             if '_age' in from_label \
-    #                                     and tool_kit.is_upper_age_limit_at_or_below(from_label, 15.):
-    #                                 incidence_increment \
-    #                                     *= self.inputs.model_constants['program_prop_child_reporting']
-    #                             epi_outputs['incidence' + stratum] \
-    #                                 = elementwise_list_addition(incidence_increment,
-    #                                                             epi_outputs['incidence' + stratum])
-    #                 # Prevalence
-    #                 if 'prevalence' in outputs_to_analyse:
-    #                     for label in self.model_dict[scenario].labels:
-    #                         if 'susceptible' not in label and 'latent' not in label and stratum in label:
-    #                             prevalence_increment = self.model_dict[scenario].get_compartment_soln(label) \
-    #                                                    / stratum_denominator \
-    #                                                    * 1e5
-    #                             epi_outputs['true_prevalence' + stratum] \
-    #                                 = elementwise_list_addition(prevalence_increment,
-    #                                                             epi_outputs['true_prevalence' + stratum])
-    #                         # Reduce paediatric contribution
-    #                         if '_age' in label and tool_kit.is_upper_age_limit_at_or_below(label, 15.):
-    #                             prevalence_increment *= self.inputs.model_constants['program_prop_child_reporting']
-    #                         epi_outputs['prevalence' + stratum] \
-    #                             = elementwise_list_addition(prevalence_increment, epi_outputs['prevalence' + stratum])
-    #
     #
     # def find_population_fractions(self, stratifications=[]):
     #
