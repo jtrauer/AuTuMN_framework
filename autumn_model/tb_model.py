@@ -1,14 +1,9 @@
-
-import sys
-import platform
 import os
-import glob
+import sys
 
 sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append('C:/Users/James/Desktop/popdynamics/popdynamics/')
-from basepop import BaseModel, make_sigmoidal_curve
-import tool_kit
-
+from basepop import BaseModel
 
 """
 This file presents a transmission dynamic model for TB based on those most commonly used by the AuTuMN team

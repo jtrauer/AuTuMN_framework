@@ -1,7 +1,8 @@
 
 import tb_model
+import outputs
 from basepop import BaseModel, make_sigmoidal_curve
-
+from outputs import Project
 
 def prepare_denominator(list_to_prepare):
     """
@@ -587,5 +588,7 @@ if __name__ == '__main__':
                                mode='manual',
                                scenarios_to_run=scenarios_to_run)
     model_runner.master_runner()
+    project = Project(model_runner)
+    project.master_outputs_runner()
 
 
