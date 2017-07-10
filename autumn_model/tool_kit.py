@@ -39,3 +39,17 @@ def adjust_country_name(country_name, adjustment='default'):
             return 'Republic of ' + country_name
         else:
             return country_name
+
+
+def replace_specified_value(a_list, new_val, old_value):
+    """
+    Replace all elements of a list that are a certain value with a new value specified in the inputs.
+
+    Args:
+         a_list: The list being modified
+         new_val: The value to insert into the list
+         old_value: The value of the list to be replaced
+    """
+
+    return [new_val if val == old_value else val for val in a_list]
+

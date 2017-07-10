@@ -4,36 +4,6 @@ import copy
 import tool_kit
 # from curve import scale_up_function, freeze_curve
 
-def make_constant_function(value):
-    """
-    Function that returns a function of constant returned value with a deliberately irrelevant argument,
-    to maintain consistency with the number of arguments to other functions that take time as an argument.
-
-    Args:
-        value: The value for the created function to return
-        time: Irrelevant argument to the returned function, but necessary for consistency with other functions
-    Returns:
-        constant: The constant function
-    """
-
-    def constant(time):
-        return value
-    return constant
-
-
-def find_latest_value_from_year_dict(dictionary, ceiling):
-    """
-    Finds the value corresponding to the latest key that is not into the future.
-
-    Args:
-        dictionary: The dictionary to be interrogated
-        ceiling: Upper limit of time to prevent entries into the future being included
-    Returns:
-        The value corresponding to the key found through this process
-    """
-
-    return dictionary[max([i for i in dictionary if i <= int(ceiling)])]
-
 
 class Inputs:
 
