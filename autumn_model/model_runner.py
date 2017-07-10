@@ -1,6 +1,6 @@
 
 import tb_model
-import outputs
+import data_processing
 from basepop import BaseModel, make_sigmoidal_curve
 from outputs import Project
 
@@ -43,6 +43,9 @@ class ModelRunner:
         self.time_variant_parameters = time_variant_parameters
         self.mode = mode
         self.scenarios_to_run = scenarios_to_run
+
+        self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run)
+        self.inputs.read_and_load_data()
 
         # loading of inputs
         # self.inputs.read_and_load_data()
