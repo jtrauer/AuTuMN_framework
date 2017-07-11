@@ -68,10 +68,16 @@ class Inputs:
 
         self.process_case_detection()
 
-        self.scaleup_data['prop_vaccination'] = {1921: 0., 1980: .8, 2015: .95}
-
-        for time_variant_parameter in ['program_prop_detect', 'prop_vaccination']:
-            self.scaleup_fns[time_variant_parameter] = curve.function_creator(self.scaleup_data[time_variant_parameter])
+        for scenario in self.scenarios:
+            self.scaleup_data[scenario]['prop_vaccination'] = {1921: 0., 1980: .8, 2015: .85}
+            if scenario == 1:
+                self.scaleup_data[scenario]['prop_vaccination'][2017] = 1.
+            elif scenario == 2:
+                self.scaleup_data[scenario]['program_prop_detect'][2017] = .9
+            self.scaleup_fns[scenario] = {}
+            for time_variant_parameter in ['program_prop_detect', 'prop_vaccination']:
+                self.scaleup_fns[scenario][time_variant_parameter] \
+                    = curve.function_creator(self.scaleup_data[scenario][time_variant_parameter])
 
         # x_values = numpy.linspace(1900., 2050., 10001)
         # result = [self.scaleup_fns['program_rate_detect'](x) for x in x_values]
@@ -111,8 +117,11 @@ class Inputs:
 
     def process_case_detection(self):
 
-        self.scaleup_data['program_prop_detect'] = {i: j / 1e2 for i, j in self.original_data['tb']['c_cdr'].items()}
-        self.scaleup_data['program_prop_detect'][1950] = 0.
+        for scenario in self.scenarios:
+            self.scaleup_data[scenario] = {}
+            self.scaleup_data[scenario]['program_prop_detect'] \
+                = {i: j / 1e2 for i, j in self.original_data['tb']['c_cdr'].items()}
+            self.scaleup_data[scenario]['program_prop_detect'][1950] = 0.
 
     #############################################
     ### Constant parameter processing methods ###
@@ -347,18 +356,6 @@ class Inputs:
             # remove keys for which values are nan
             self.time_variants[time_variant] = tool_kit.remove_nans(self.time_variants[time_variant])
 
-    # called later than the methods above - after interventions have been classified
-    def find_scaleup_functions(self):
-        """
-        Master method for calculation of time-variant parameters/scale-up functions.
-        """
-
-        # extract data into structures for creating time-variant parameters or constant ones
-        self.find_data_for_functions_or_params()
-
-        # find scale-up functions or constant parameters
-        self.find_scaleups()
-
     def find_data_for_functions_or_params(self):
 
         """
@@ -386,52 +383,6 @@ class Inputs:
                                 self.scaleup_data[scenario][str(time_variant)][i] = self.time_variants[time_variant][i]
                         else:
                             self.scaleup_data[scenario][str(time_variant)][i] = self.time_variants[time_variant][i]
-
-    def find_scaleups(self):
-        """
-        Calculate the scale-up functions from the scale-up data attribute and populate to a dictionary with keys of the
-        scenarios to be run.
-        Note that the 'demo_life_expectancy' parameter has to be given this name and base.py will then calculate
-        population death rates automatically.
-        """
-
-        for scenario in self.scenarios:
-            scenario_name = tool_kit.find_scenario_string_from_number(scenario)
-
-            # define scale-up functions from these datasets
-            for param in self.scaleup_data[scenario]:
-                if param not in self.scaleup_fns[scenario]:  # if not already set as constant previously
-
-                    # extract and remove the smoothness parameter from the dictionary
-                    smoothness = self.gui_inputs['default_smoothness']
-                    if 'smoothness' in self.scaleup_data[scenario][param]:
-                        smoothness = self.scaleup_data[scenario][param].pop('smoothness')
-
-                    # if the parameter is being modified for the scenario being run
-                    scenario_for_function = None
-                    if 'scenario' in self.scaleup_data[scenario][param]:
-                        scenario_for_function = [self.model_constants['scenario_full_time'],
-                                                 self.scaleup_data[scenario][param].pop('scenario')]
-
-                    # upper bound depends on whether the parameter is a proportion
-                    upper_bound = None
-                    if 'prop_' in param: upper_bound = 1.
-
-                    # calculate the scaling function
-                    self.scaleup_fns[scenario][param] \
-                        = scale_up_function(self.scaleup_data[scenario][param].keys(),
-                                            self.scaleup_data[scenario][param].values(),
-                                            self.gui_inputs['fitting_method'], smoothness,
-                                            bound_low=0., bound_up=upper_bound,
-                                            intervention_end=scenario_for_function,
-                                            intervention_start_date=self.model_constants[
-                                                'scenario_start_time'])
-
-                    # freeze at point in time if necessary
-                    if scenario_name in self.freeze_times \
-                            and self.freeze_times[scenario_name] < self.model_constants['recent_time']:
-                        self.scaleup_fns[scenario][param] \
-                            = freeze_curve(self.scaleup_fns[scenario][param], self.freeze_times[scenario_name])
 
     ###################################
     ### Uncertainty-related methods ###

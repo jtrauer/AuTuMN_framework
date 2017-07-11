@@ -97,8 +97,8 @@ class SimpleTbModel(BaseModel):
         # parameter setting
         for parameter, value in fixed_parameters.items():
             self.set_param(parameter, value)
-        for parameter in self.inputs.scaleup_fns:
-            self.set_scaleup_fn(parameter, self.inputs.scaleup_fns[parameter])
+        for parameter in self.inputs.scaleup_fns[self.scenario]:
+            self.set_scaleup_fn(parameter, self.inputs.scaleup_fns[self.scenario][parameter])
 
     def calculate_vars(self):
         """

@@ -106,7 +106,7 @@ class ModelRunner:
             # describe model and integrate
             print('Running scenario ' + str(scenario) + ' conditions for ' + self.country +
                   ' using single parameter set')
-            self.model_dict[scenario].make_times(1850, 2050, .05)
+            self.model_dict[scenario].make_times(1850, 2035, .05)
             self.model_dict[scenario].integrate(method='explicit')
 
             # model interpretation for each scenario
@@ -569,7 +569,7 @@ if __name__ == '__main__':
         'program_rate_death_noninfect': .05 / time_late_treatment,
         'int_vaccine_efficacy': .5
     }
-    scenarios_to_run = [0, 1]
+    scenarios_to_run = [0, 1, 2]
 
     model_runner = ModelRunner(country='India',
                                fixed_parameters=fixed_parameters,

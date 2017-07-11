@@ -290,7 +290,7 @@ class Project:
 
         # sort x-axis
         if x_axis_type == 'time':
-            ax.set_xlim((start_time, 2016))
+            ax.set_xlim((start_time, 2035))
             ax.set_xticks(find_reasonable_year_ticks(start_time, 2016))
         elif x_axis_type == 'scaled':
             vals = list(ax.get_xticks())
@@ -403,7 +403,7 @@ class Project:
         """
 
         # standard preliminaries
-        start_time = 1990
+        start_time = 2000
         colour, indices, yaxis_label, title, patch_colour = find_standard_output_styles(outputs, lightening_factor=0.3)
         subplot_grid = find_subplot_numbers(len(outputs))
         fig = self.set_and_update_figure()
