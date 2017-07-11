@@ -3,6 +3,9 @@ import tb_model
 import data_processing
 from basepop import BaseModel, make_sigmoidal_curve
 from outputs import Project
+from scipy.stats import norm, beta
+import numpy
+
 
 def prepare_denominator(list_to_prepare):
     """
@@ -76,7 +79,10 @@ class ModelRunner:
         # output-related attributes
         self.epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']
         self.epi_outputs = {}
-        # self.epi_outputs_uncertainty = {}
+        self.epi_outputs_uncertainty = []
+
+        # parameter name, mean of prior, sd of prior, lower bound, upper bound
+        self.param_ranges_unc = [['tb_n_contact', 30., 15., 10., 50., 5., 'beta']]
 
     ###############################################
     ### Master methods to run all other methods ###
@@ -168,151 +174,70 @@ class ModelRunner:
 
         return epi_outputs
 
-    #
-    # def find_population_fractions(self, stratifications=[]):
-    #
-    #     """
-    #     Find the proportion of the population in various stratifications.
-    #     The stratifications must apply to the entire population, so not to be used for strains, etc.
-    #     """
-    #
-    #     for scenario in self.model_dict:
-    #         for stratification in stratifications:
-    #             if len(stratification) > 1:
-    #                 for stratum in stratification:
-    #                     self.epi_outputs[scenario]['fraction' + stratum] \
-    #                         = elementwise_list_division(self.epi_outputs[scenario]['population' + stratum],
-    #                                                     self.epi_outputs[scenario]['population'])
-    #
-    # def find_uncertainty_centiles(self, full_uncertainty_outputs):
-    #
-    #     """
-    #     Find percentiles from uncertainty dictionaries.
-    #
-    #     Updates:
-    #         self.percentiles: Adds all the required percentiles to this dictionary.
-    #     """
-    #
-    #     uncertainty_centiles = {}
-    #     self.accepted_no_burn_in_indices = [i for i in self.accepted_indices if i >= self.gui_inputs['burn_in_runs']]
-    #
-    #     # Loop through scenarios and outputs
-    #     for scenario in full_uncertainty_outputs:
-    #         uncertainty_centiles[scenario] = {}
-    #         for output in full_uncertainty_outputs[scenario]:
-    #             if output != 'times':
-    #
-    #                 # To deal with the fact that we are currently saving all baseline runs but only accepted scenarios:
-    #                 if scenario == 'uncertainty_baseline':
-    #                     matrix_to_analyse = full_uncertainty_outputs[scenario][output][
-    #                                         self.accepted_no_burn_in_indices, :]
-    #                 else:
-    #                     matrix_to_analyse = full_uncertainty_outputs[scenario][output]
-    #
-    #                 # Find the actual centiles
-    #                 uncertainty_centiles[scenario][output] \
-    #                     = numpy.percentile(matrix_to_analyse, self.percentiles, axis=0)
-    #
-    #     # Return result to make usable in other situations
-    #     return uncertainty_centiles
-    #
-    # ###########################
-    # ### Uncertainty methods ###
-    # ###########################
-    #
-    # def run_uncertainty(self):
-    #
-    #     """
-    #     Main method to run all the uncertainty processes.
-    #     """
-    #
-    #     self.add_comment_to_gui_window('Uncertainty analysis commenced')
-    #
-    #     # If not doing an adaptive search, only need to start with a single parameter set
-    #     if self.gui_inputs['adaptive_uncertainty']:
-    #         n_candidates = 1
-    #     else:
-    #         n_candidates = self.gui_inputs['uncertainty_runs'] * 10
-    #
-    #     # Decide whether to start analysis from a random point or the manual values of the parameters
-    #     if not self.gui_inputs['adaptive_uncertainty'] or self.random_start:
-    #         param_candidates = generate_candidates(n_candidates, self.inputs.param_ranges_unc)
-    #     else:
-    #         param_candidates = {}
-    #         for param in self.inputs.param_ranges_unc:
-    #             param_candidates[param['key']] = [self.inputs.model_constants[param['key']]]
-    #
-    #     # Find weights for outputs that are being calibrated to
-    #     normal_char = self.get_fitting_data()
-    #     years_to_compare = range(1990, 2015)
-    #     weights = find_uncertainty_output_weights(years_to_compare, 1, [1., 2.])
-    #     self.add_comment_to_gui_window('"Weights": \n' + str(weights))
-    #
-    #     # Prepare for uncertainty loop
-    #     n_accepted = 0
-    #     prev_log_likelihood = -1e10
-    #     for param in self.inputs.param_ranges_unc:
-    #         self.all_parameters_tried[param['key']] = []
-    #         self.acceptance_dict[param['key']] = {}
-    #         self.rejection_dict[param['key']] = {}
-    #         self.rejection_dict[param['key']][n_accepted] = []
-    #
-    #     # Instantiate uncertainty model objects
-    #     for scenario in self.gui_inputs['scenarios_to_run']:
-    #         scenario_name = 'uncertainty_' + tool_kit.find_scenario_string_from_number(scenario)
-    #         self.model_dict[scenario_name] = model.ConsolidatedModel(scenario, self.inputs, self.gui_inputs)
-    #
-    #     # Until a sufficient number of parameters are accepted
-    #     run = 0
-    #     while n_accepted < self.gui_inputs['uncertainty_runs']:
-    #
-    #         # Set timer
-    #         start_timer_run = datetime.datetime.now()
-    #
-    #         # If we are using existing parameters
-    #         if run == 0 or not self.gui_inputs['adaptive_uncertainty']:
-    #             new_param_list = []
-    #             for param in self.inputs.param_ranges_unc:
-    #                 new_param_list.append(param_candidates[param['key']][run])
-    #                 params = new_param_list
-    #
-    #         # If we need to get a new parameter set from the old accepted set
-    #         else:
-    #             new_param_list = self.update_params(params)
-    #
-    #         # Run baseline integration (includes parameter checking, parameter setting and recording success/failure)
-    #         self.run_with_params(new_param_list, model_object='uncertainty_baseline')
-    #
-    #         # Now storing regardless of acceptance, provided run was completed successfully
-    #         if self.is_last_run_success:
-    #
-    #             # Get outputs for calibration and store results
-    #             self.store_uncertainty('uncertainty_baseline', epi_outputs_to_analyse=self.epi_outputs_to_analyse)
-    #             integer_dictionary \
-    #                 = extract_integer_dicts(['uncertainty_baseline'],
-    #                                         get_output_dicts_from_lists(models_to_analyse=['uncertainty_baseline'],
-    #                                                                     output_dict_of_lists=self.epi_outputs))
-    #
-    #             # Calculate prior
-    #             prior_log_likelihood = 0.
-    #             for p, param in enumerate(self.inputs.param_ranges_unc):
-    #                 param_val = new_param_list[p]
-    #                 self.all_parameters_tried[param['key']].append(new_param_list[p])
-    #
-    #                 # Calculate the density of param_val
-    #                 bound_low, bound_high = param['bounds'][0], param['bounds'][1]
-    #
-    #                 # Normalise value and find log of PDF from appropriate distribution
-    #                 if param['distribution'] == 'beta':
-    #                     prior_log_likelihood \
-    #                         += beta.logpdf((param_val - bound_low) / (bound_high - bound_low), 2., 2.)
-    #                 elif param['distribution'] == 'uniform':
-    #                     prior_log_likelihood += numpy.log(1. / (bound_high - bound_low))
-    #
-    #             # Calculate posterior
-    #             posterior_log_likelihood = 0.
-    #             for output_dict in self.outputs_unc:
-    #
+    ###########################
+    ### Uncertainty methods ###
+    ###########################
+
+    def run_uncertainty(self):
+        """
+        Main method to run all the uncertainty processes.
+        """
+
+        print('Uncertainty analysis commenced')
+
+        # if not doing an adaptive search, only need to start with a single parameter set
+        n_candidates = 1
+
+        # prepare for uncertainty loop
+        n_accepted = 0
+        prev_log_likelihood = -1e10
+
+        # instantiate uncertainty model object
+        self.model_dict['uncertainty'] = tb_model.SimpleTbModel(fixed_parameters, self.inputs, 0)
+
+        # until a sufficient number of parameters are accepted
+        run = 0
+        uncertainty_runs = 20
+        while n_accepted < uncertainty_runs:
+
+            # if we are using the first parameter set
+            if run == 0:
+                new_param_list = []
+                for i in range(len(self.param_ranges_unc)):
+                    new_param_list.append(self.param_ranges_unc[i][1])
+                    params = new_param_list
+
+            # if we need to get a new parameter set from the old accepted set
+            else:
+                new_param_list = self.update_params(params)
+
+            # run baseline integration (includes parameter checking, parameter setting and recording success/failure)
+            self.run_with_params(new_param_list)
+
+            # store regardless of acceptance, provided run was completed successfully
+            if self.is_last_run_success:
+
+                # get outputs for calibration and store results
+                self.store_uncertainty()
+
+                # calculate prior
+                prior_log_likelihood = 0.
+                for i in range(len(self.param_ranges_unc)):
+                    param_val = new_param_list[i]
+
+                    # calculate the density of param_val
+                    bound_low, bound_high = self.param_ranges_unc[i][3], self.param_ranges_unc[i][4]
+
+                    # normalise value and find log of PDF from appropriate distribution
+                    if self.param_ranges_unc[i][6] == 'beta':
+                        prior_log_likelihood += beta.logpdf((param_val - bound_low) / (bound_high - bound_low), 2., 2.)
+                    elif self.param_ranges_unc[i][6] == 'uniform':
+                        prior_log_likelihood += numpy.log(1. / (bound_high - bound_low))
+
+                # calculate posterior
+                posterior_log_likelihood = 0.
+                for output_dict in self.outputs_unc:
+
     #                 # The GTB values for the output of interest
     #                 working_output_dictionary = normal_char[output_dict['key']]
     #                 for y, year in enumerate(years_to_compare):
@@ -372,40 +297,35 @@ class ModelRunner:
     #         if not self.gui_inputs['adaptive_uncertainty'] and run >= len(param_candidates.keys()):
     #             param_candidates = generate_candidates(n_candidates, self.inputs.param_ranges_unc)
     #             run = 0
-    #
-    # def set_model_with_params(self, param_dict, model_object='baseline'):
-    #
-    #     """
-    #     Populates baseline model with params from uncertainty calculations.
-    #
-    #     Args:
-    #         param_dict: Dictionary of the parameters to be set within the model (keys parameter name strings and values
-    #             parameter values).
-    #     """
-    #
-    #     for key in param_dict:
-    #         if key in self.model_dict[model_object].params:
-    #             self.model_dict[model_object].set_parameter(key, param_dict[key])
-    #         else:
-    #             raise ValueError("%s not in model_object params" % key)
-    #
-    # def convert_param_list_to_dict(self, params):
-    #
-    #     """
-    #     Extract parameters from list into dictionary that can be used for setting in the model through the
-    #     set_model_with_params method.
-    #
-    #     Args:
-    #         params: The parameter names for extraction.
-    #     Returns:
-    #         param_dict: The dictionary returned in appropriate format.
-    #     """
-    #
-    #     param_dict = {}
-    #     for names, vals in zip(self.inputs.param_ranges_unc, params):
-    #         param_dict[names['key']] = vals
-    #     return param_dict
-    #
+
+    def set_model_with_params(self, param_dict):
+        """
+        Populates baseline model with params from uncertainty calculations.
+
+        Args:
+            param_dict: Dictionary of the parameters to be set within the model (keys parameter name strings and values
+                parameter values).
+        """
+
+        for key in param_dict:
+            self.model_dict['uncertainty'].set_param(key, param_dict[key])
+
+    def convert_param_list_to_dict(self, params):
+        """
+        Extract parameters from list into dictionary that can be used for setting in the model through the
+        set_model_with_params method.
+
+        Args:
+            params: The parameter names for extraction.
+        Returns:
+            param_dict: The dictionary returned in appropriate format.
+        """
+
+        param_dict = {}
+        for i in range(len(self.param_ranges_unc)):
+            param_dict[self.param_ranges_unc[i][0]] = params[i]
+        return param_dict
+
     # def get_fitting_data(self):
     #
     #     """
@@ -439,114 +359,77 @@ class ModelRunner:
     #                 normal_char[output_dict['key']][year] = [mu, sd]
     #
     #     return normal_char
-    #
-    # def update_params(self, old_params):
-    #
-    #     """
-    #     Update all the parameter values being used in the uncertainty analysis.
-    #
-    #     Args:
-    #         old_params:
-    #
-    #     Returns:
-    #         new_params: The new parameters to be used in the next model run.
-    #
-    #     """
-    #
-    #     new_params = []
-    #
-    #     # Iterate through the parameters being used
-    #     for p, param_dict in enumerate(self.inputs.param_ranges_unc):
-    #         bounds = param_dict['bounds']
-    #         sd = self.gui_inputs['search_width'] * (bounds[1] - bounds[0]) / (2.0 * 1.96)
-    #         random = -100.
-    #
-    #         # Search for new parameters
-    #         while random < bounds[0] or random > bounds[1]:
-    #             random = norm.rvs(loc=old_params[p], scale=sd, size=1)
-    #
-    #         # Add them to the dictionary
-    #         new_params.append(random[0])
-    #
-    #     return new_params
-    #
-    # def run_with_params(self, params, model_object='uncertainty_baseline'):
-    #
-    #     """
-    #     Integrate the model with the proposed parameter set.
-    #
-    #     Args:
-    #         params: The parameters to be set in the model.
-    #     """
-    #
-    #     # Check whether parameter values are acceptable
-    #     for p, param in enumerate(params):
-    #
-    #         # Whether the parameter value is valid
-    #         if not is_parameter_value_valid(param):
-    #             print 'Warning: parameter%d=%f is invalid for model' % (p, param)
-    #             self.is_last_run_success = False
-    #             return
-    #         bounds = self.inputs.param_ranges_unc[p]['bounds']
-    #
-    #         # Whether the parameter value is within acceptable ranges
-    #         if (param < bounds[0]) or (param > bounds[1]):
-    #             # print 'Warning: parameter%d=%f is outside of the allowed bounds' % (p, param)
-    #             self.is_last_run_success = False
-    #             return
-    #
-    #     param_dict = self.convert_param_list_to_dict(params)
-    #
-    #     # Set parameters and run
-    #     self.set_model_with_params(param_dict, model_object)
-    #     self.is_last_run_success = True
-    #     try:
-    #         self.model_dict[model_object].integrate()
-    #     except:
-    #         print "Warning: parameters=%s failed with model" % params
-    #         self.is_last_run_success = False
-    #
-    # def store_uncertainty(self, scenario_name, epi_outputs_to_analyse):
-    #
-    #     """
-    #     Add model results from one uncertainty run to the appropriate outputs dictionary, vertically stacking
-    #     results on to the previous matrix.
-    #
-    #     Args:
-    #         scenario_name: The scenario being run.
-    #         epi_outputs_to_analyse: The epidemiological outputs of interest.
-    #     Updates:
-    #         self.epi_outputs_uncertainty
-    #         self.cost_outputs_uncertainty
-    #     """
-    #
-    #     # Get outputs
-    #     self.epi_outputs[scenario_name] \
-    #         = self.find_epi_outputs(scenario_name, outputs_to_analyse=self.epi_outputs_to_analyse)
-    #     if len(self.model_dict[scenario_name].interventions_to_cost) > 0:
-    #         self.find_cost_outputs(scenario_name)
-    #
-    #     # Initialise dictionaries if needed
-    #     if scenario_name not in self.epi_outputs_uncertainty:
-    #         self.epi_outputs_uncertainty[scenario_name] = {'times': self.epi_outputs[scenario_name]['times']}
-    #         self.cost_outputs_uncertainty[scenario_name] = {'times': self.cost_outputs[scenario_name]['times']}
-    #         for output in epi_outputs_to_analyse:
-    #             self.epi_outputs_uncertainty[scenario_name][output] \
-    #                 = numpy.empty(shape=[0, len(self.epi_outputs[scenario_name]['times'])])
-    #         for output in self.cost_outputs[scenario_name]:
-    #             self.cost_outputs_uncertainty[scenario_name][output] \
-    #                 = numpy.empty(shape=[0, len(self.cost_outputs[scenario_name]['times'])])
-    #
-    #     # Add uncertainty data to dictionaries
-    #     for output in epi_outputs_to_analyse:
-    #         self.epi_outputs_uncertainty[scenario_name][output] \
-    #             = numpy.vstack([self.epi_outputs_uncertainty[scenario_name][output],
-    #                             self.epi_outputs[scenario_name][output]])
-    #     for output in self.cost_outputs[scenario_name]:
-    #         self.cost_outputs_uncertainty[scenario_name][output] \
-    #             = numpy.vstack([self.cost_outputs_uncertainty[scenario_name][output],
-    #                             self.cost_outputs[scenario_name][output]])
-    #
+
+    def update_params(self, old_params):
+        """
+        Update all the parameter values being used in the uncertainty analysis.
+
+        Args:
+            old_params:
+
+        Returns:
+            new_params: The new parameters to be used in the next model run.
+        """
+
+        new_params = []
+
+        # iterate through the parameters being used
+        for i in range(len(self.param_ranges_unc)):
+            search_width = self.param_ranges_unc[i][5]
+            random = -100.
+
+            # search for new parameters
+            while random < self.param_ranges_unc[i][3] or random > self.param_ranges_unc[i][4]:
+                random = norm.rvs(loc=old_params[i], scale=search_width, size=1)
+
+            # add them to the list
+            new_params.append(float(random[0]))
+
+        return new_params
+
+    def run_with_params(self, params):
+        """
+        Integrate the model with the proposed parameter set.
+
+        Args:
+            params: The parameters to be set in the model.
+        """
+
+        param_dict = self.convert_param_list_to_dict(params)
+
+        # set parameters and run
+        self.set_model_with_params(param_dict)
+        self.is_last_run_success = True
+        try:
+            self.model_dict['uncertainty'].make_times(1850, 2035, .05)
+            self.model_dict['uncertainty'].integrate()
+        except:
+            print "Warning: parameters=%s failed with model" % params
+            self.is_last_run_success = False
+
+    def store_uncertainty(self):
+        """
+        Add model results from one uncertainty run to the appropriate outputs dictionary, vertically stacking
+        results on to the previous matrix.
+
+        Updates:
+            self.epi_outputs_uncertainty
+        """
+
+        # get outputs
+        self.epi_outputs['uncertainty'] = self.find_epi_outputs('uncertainty')
+
+        # initialise dictionaries if needed
+        if not self.epi_outputs_uncertainty:
+            self.epi_outputs_uncertainty = {'times': self.epi_outputs['uncertainty']['times']}
+            for output in self.epi_outputs_to_analyse:
+                self.epi_outputs_uncertainty[output] \
+                    = numpy.empty(shape=[0, len(self.epi_outputs['uncertainty']['times'])])
+
+        # add uncertainty data to dictionaries
+        for output in self.epi_outputs_to_analyse:
+            self.epi_outputs_uncertainty[output] \
+                = numpy.vstack([self.epi_outputs_uncertainty[output], self.epi_outputs['uncertainty'][output]])
 
 
 if __name__ == '__main__':
@@ -570,7 +453,7 @@ if __name__ == '__main__':
         'int_vaccine_efficacy': .5
     }
     model_runner \
-        = ModelRunner(country='India', fixed_parameters=fixed_parameters, mode='manual', scenarios_to_run=[0, 1, 2])
+        = ModelRunner(country='India', fixed_parameters=fixed_parameters, mode='uncertainty', scenarios_to_run=[0, 1, 2])
     model_runner.master_runner()
     project = Project(model_runner)
     project.master_outputs_runner()
