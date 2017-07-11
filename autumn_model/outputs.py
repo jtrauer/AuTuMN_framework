@@ -291,7 +291,7 @@ class Project:
         # sort x-axis
         if x_axis_type == 'time':
             ax.set_xlim((start_time, 2035))
-            ax.set_xticks(find_reasonable_year_ticks(start_time, 2016))
+            ax.set_xticks(find_reasonable_year_ticks(start_time, 2035))
         elif x_axis_type == 'scaled':
             vals = list(ax.get_xticks())
             max_val = max([abs(v) for v in vals])
