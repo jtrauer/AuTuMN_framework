@@ -82,7 +82,7 @@ class ModelRunner:
         self.epi_outputs_uncertainty = []
 
         # parameter name, mean of prior, sd of prior, lower bound, upper bound
-        self.param_ranges_unc = [['tb_n_contact', 30., 15., 10., 50., 5., 'beta']]
+        self.param_ranges_unc = [['tb_n_contact', 25., 15., 0., 50., 5., 'beta']]
 
     ###############################################
     ### Master methods to run all other methods ###
@@ -185,8 +185,7 @@ class ModelRunner:
 
         print('Uncertainty analysis commenced')
 
-        # if not doing an adaptive search, only need to start with a single parameter set
-        n_candidates = 1
+        target_incidence = [150., 30., 2016]
 
         # prepare for uncertainty loop
         n_accepted = 0
@@ -236,67 +235,35 @@ class ModelRunner:
 
                 # calculate posterior
                 posterior_log_likelihood = 0.
-                for output_dict in self.outputs_unc:
 
-    #                 # The GTB values for the output of interest
-    #                 working_output_dictionary = normal_char[output_dict['key']]
-    #                 for y, year in enumerate(years_to_compare):
-    #                     if year in working_output_dictionary.keys():
-    #                         model_result_for_output = integer_dictionary['uncertainty_baseline']['incidence'][year]
-    #                         mu, sd = working_output_dictionary[year][0], working_output_dictionary[year][1]
-    #                         posterior_log_likelihood += norm.logpdf(model_result_for_output, mu, sd) * weights[y]
-    #
-    #             # Determine acceptance
-    #             log_likelihood = prior_log_likelihood + posterior_log_likelihood
-    #             accepted = numpy.random.binomial(n=1, p=min(1., numpy.exp(log_likelihood - prev_log_likelihood)))
-    #
-    #             # Explain progression of likelihood
-    #             self.add_comment_to_gui_window('Previous log likelihood:\n' + str(prev_log_likelihood)
-    #                                            + '\nLog likelihood this run:\n' + str(log_likelihood)
-    #                                            + '\nAcceptance probability:\n'
-    #                                            + str(min(1., numpy.exp(log_likelihood - prev_log_likelihood)))
-    #                                            + '\nWhether accepted:\n' + str(bool(accepted)) + '\n________________\n')
-    #             self.loglikelihoods.append(log_likelihood)
-    #
-    #             # Record information for all runs
-    #             if bool(accepted):
-    #                 self.whether_accepted_list.append(True)
-    #                 self.accepted_indices += [run]
-    #                 n_accepted += 1
-    #                 for p, param in enumerate(self.inputs.param_ranges_unc):
-    #                     self.acceptance_dict[param['key']][n_accepted] = new_param_list[p]
-    #                     self.rejection_dict[param['key']][n_accepted] = []
-    #
-    #                 # Update likelihood and parameter set for next run
-    #                 prev_log_likelihood = log_likelihood
-    #                 params = new_param_list
-    #
-    #                 # Run scenarios other than baseline and store uncertainty (only if accepted)
-    #                 for scenario in self.gui_inputs['scenarios_to_run']:
-    #                     if scenario is not None:
-    #                         scenario_name = 'uncertainty_' + tool_kit.find_scenario_string_from_number(scenario)
-    #                         self.prepare_new_model_from_baseline('uncertainty', scenario_name)
-    #                     scenario_name = 'uncertainty_' + tool_kit.find_scenario_string_from_number(scenario)
-    #                     self.run_with_params(new_param_list, model_object=scenario_name)
-    #                     self.store_uncertainty(scenario_name, epi_outputs_to_analyse=self.epi_outputs_to_analyse)
-    #
-    #             else:
-    #                 self.whether_accepted_list.append(False)
-    #                 self.rejected_indices += [run]
-    #                 for p, param in enumerate(self.inputs.param_ranges_unc):
-    #                     self.rejection_dict[param['key']][n_accepted].append(new_param_list[p])
-    #
-    #             # Plot parameter progression and report on progress
-    #             self.plot_progressive_parameters()
-    #             self.add_comment_to_gui_window(str(n_accepted) + ' accepted / ' + str(run) +
-    #                                            ' candidates. Running time: '
-    #                                            + str(datetime.datetime.now() - start_timer_run))
-    #             run += 1
-    #
-    #         # Generate more candidates if required -
-    #         if not self.gui_inputs['adaptive_uncertainty'] and run >= len(param_candidates.keys()):
-    #             param_candidates = generate_candidates(n_candidates, self.inputs.param_ranges_unc)
-    #             run = 0
+                incidence_result \
+                    = self.epi_outputs['uncertainty']['incidence'][self.find_time_index(target_incidence[2],
+                                                                                        'uncertainty')]
+
+                posterior_log_likelihood += norm.logpdf(incidence_result, target_incidence[0], target_incidence[1])
+
+                # determine acceptance
+                log_likelihood = prior_log_likelihood + posterior_log_likelihood
+                accepted = numpy.random.binomial(n=1, p=min(1., numpy.exp(log_likelihood - prev_log_likelihood)))
+
+                if bool(accepted):
+                    n_accepted += 1
+
+                    # update likelihood and parameter set for next run
+                    prev_log_likelihood = log_likelihood
+                    params = new_param_list
+
+                run += 1
+
+                print('run')
+                print(run)
+                print('accepted')
+                print(accepted)
+                print('incidence')
+                print(incidence_result)
+                print('beta')
+                print(new_param_list[0])
+                print('\n')
 
     def set_model_with_params(self, param_dict):
         """
@@ -326,39 +293,31 @@ class ModelRunner:
             param_dict[self.param_ranges_unc[i][0]] = params[i]
         return param_dict
 
-    # def get_fitting_data(self):
-    #
-    #     """
-    #     Define the characteristics (mean and standard deviation) of the normal distribution for model outputs
-    #     (incidence, mortality).
-    #
-    #     Returns:
-    #         normal_char: Dictionary with keys outputs and values dictionaries. Sub-dictionaries have keys years
-    #             and values lists, with first element of list means and second standard deviations.
-    #     """
-    #
-    #     # Dictionary storing the characteristics of the normal distributions
-    #     normal_char = {}
-    #     for output_dict in self.inputs.outputs_unc:
-    #         normal_char[output_dict['key']] = {}
-    #
-    #         # Mortality
-    #         if output_dict['key'] == 'mortality':
-    #             sd = output_dict['posterior_width'] / (2. * 1.96)
-    #             for year in self.inputs.data_to_fit[output_dict['key']].keys():
-    #                 mu = self.inputs.data_to_fit[output_dict['key']][year]
-    #                 normal_char[output_dict['key']][year] = [mu, sd]
-    #
-    #         # Incidence
-    #         elif output_dict['key'] == 'incidence':
-    #             for year in self.inputs.data_to_fit[output_dict['key']].keys():
-    #                 low = self.inputs.data_to_fit['incidence_low'][year]
-    #                 high = self.inputs.data_to_fit['incidence_high'][year]
-    #                 sd = output_dict['width_multiplier'] * (high - low) / (2. * 1.96)
-    #                 mu = (high + low) / 2.
-    #                 normal_char[output_dict['key']][year] = [mu, sd]
-    #
-    #     return normal_char
+    def get_fitting_data(self, ):
+        """
+        Define the characteristics (mean and standard deviation) of the normal distribution for model outputs
+        (incidence, mortality).
+
+        Returns:
+            normal_char: Dictionary with keys outputs and values dictionaries. Sub-dictionaries have keys years
+                and values lists, with first element of list means and second standard deviations.
+        """
+
+        # dictionary storing the characteristics of the normal distributions
+        normal_char = {}
+        for output_dict in self.inputs.outputs_unc:
+            normal_char[output_dict['key']] = {}
+
+            # incidence
+            if output_dict['key'] == 'incidence':
+                for year in self.inputs.data_to_fit[output_dict['key']].keys():
+                    low = self.inputs.data_to_fit['incidence_low'][year]
+                    high = self.inputs.data_to_fit['incidence_high'][year]
+                    sd = output_dict['width_multiplier'] * (high - low) / (2. * 1.96)
+                    mu = (high + low) / 2.
+                    normal_char[output_dict['key']][year] = [mu, sd]
+
+        return normal_char
 
     def update_params(self, old_params):
         """
@@ -430,6 +389,17 @@ class ModelRunner:
         for output in self.epi_outputs_to_analyse:
             self.epi_outputs_uncertainty[output] \
                 = numpy.vstack([self.epi_outputs_uncertainty[output], self.epi_outputs['uncertainty'][output]])
+
+    def find_time_index(self, time, scenario):
+        """
+        Method to find first time point in times list at or after a certain specified time point.
+
+        Args:
+            time: Float for the time point of interest.
+        """
+
+        return [i for i, j in enumerate(self.model_dict[scenario].times) if j >= time][0] - 1
+        raise ValueError('Time not found')
 
 
 if __name__ == '__main__':
