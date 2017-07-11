@@ -74,7 +74,7 @@ class SimpleTbModel(BaseModel):
     Nested inheritance from BaseModel, which applies to any infectious disease generally.
     """
 
-    def __init__(self, fixed_parameters, scenario=0, time_variant_parameters={}):
+    def __init__(self, fixed_parameters, inputs, scenario=0):
         """
         Inputs:
             interventions: List of interventions to be simulated in the run of the model
@@ -82,8 +82,8 @@ class SimpleTbModel(BaseModel):
 
         BaseModel.__init__(self)
 
+        self.inputs = inputs
         self.scenario = scenario
-        self.time_variant_parameters = time_variant_parameters
 
         # define all compartments, initialise as empty and then populate
         model_compartments \
@@ -97,8 +97,8 @@ class SimpleTbModel(BaseModel):
         # parameter setting
         for parameter, value in fixed_parameters.items():
             self.set_param(parameter, value)
-        for parameter in self.time_variant_parameters[scenario]:
-            self.set_scaleup_fn(parameter, self.time_variant_parameters[scenario][parameter])
+        for parameter in self.inputs.scaleup_fns:
+            self.set_scaleup_fn(parameter, self.inputs.scaleup_fns[parameter])
 
     def calculate_vars(self):
         """
@@ -141,7 +141,7 @@ class SimpleTbModel(BaseModel):
         self.set_infection_death_rate_flow('active', 'tb_rate_death')
 
         # programmatic
-        self.set_var_transfer_rate_flow('active', 'treatment_infect', 'rate_program_detect')
+        self.set_var_transfer_rate_flow('active', 'treatment_infect', 'program_rate_detect')
         self.set_fixed_transfer_rate_flow('treatment_infect', 'treatment_noninfect', 'program_rate_completion_infect')
         self.set_fixed_transfer_rate_flow('treatment_infect', 'active', 'program_rate_default_infect')
         self.set_fixed_transfer_rate_flow('treatment_noninfect', 'susceptible', 'program_rate_completion_noninfect')

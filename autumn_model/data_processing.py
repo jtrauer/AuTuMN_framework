@@ -68,14 +68,16 @@ class Inputs:
 
         self.process_case_detection()
 
-        for time_variant_parameter in ['program_rate_detect']:
+        self.scaleup_data['prop_vaccination'] = {1921: 0., 1980: 80., 2015: 95.}
+
+        for time_variant_parameter in ['program_rate_detect', 'prop_vaccination']:
             self.scaleup_fns[time_variant_parameter] = curve.function_creator(self.scaleup_data[time_variant_parameter])
 
-        x_values = numpy.linspace(1900., 2050., 10001)
-        result = [self.scaleup_fns['program_rate_detect'](x) for x in x_values]
-        plt.plot(x_values, result)
-        plt.show()
-        print()
+        # x_values = numpy.linspace(1900., 2050., 10001)
+        # result = [self.scaleup_fns['program_rate_detect'](x) for x in x_values]
+        # plt.plot(x_values, result)
+        # plt.show()
+        # print()
 
         # # process constant parameters
         # self.process_model_constants()
@@ -94,13 +96,6 @@ class Inputs:
         #
         # # calculate time-variant functions
         # self.find_scaleup_functions()
-        #
-        # # create mixing matrix (has to be run after scale-up functions, so can't go in model structure method)
-        # if self.vary_force_infection_by_riskgroup:
-        #     self.create_mixing_matrix()
-        # else:
-        #     for scenario in self.scenarios:
-        #         self.mixing[scenario] = {}
         #
         # # define compartmental structure
         # self.define_compartment_structure()

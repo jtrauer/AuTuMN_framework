@@ -101,9 +101,7 @@ class ModelRunner:
 
             # name and initialise model
             self.model_dict[scenario] \
-                = tb_model.SimpleTbModel(fixed_parameters,
-                                         scenario,
-                                         time_variant_parameters=self.time_variant_parameters)
+                = tb_model.SimpleTbModel(fixed_parameters, self.inputs, scenario)
 
             # describe model and integrate
             print('Running scenario ' + str(scenario) + ' conditions for ' + self.country +
