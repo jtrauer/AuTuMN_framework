@@ -70,9 +70,13 @@ class ModelRunner:
         self.epi_outputs = {}
         self.epi_outputs_uncertainty = []
 
-        # list of uncertainty parameters, with standard ordering of elements as follows:
-        # parameter name string, starting point, lower bound of prior, upper bound of prior, search width, distribution
-        self.param_ranges_unc = [['tb_n_contact', 25., 0., 50., 5., 'beta']]
+        # dictionary of uncertainty parameters, with standard keys
+        self.param_ranges_unc = [{'name': 'tb_n_contact',
+                                  'start': 25.,
+                                  'lower_bound': 0.,
+                                  'upper_bound': 50.,
+                                  'search_width': 5.,
+                                  'distribution': 'beta'}]
 
     ###############################################
     ### Master methods to run all other methods ###
@@ -193,7 +197,7 @@ class ModelRunner:
             if run == 0:
                 new_param_list = []
                 for i in range(len(self.param_ranges_unc)):
-                    new_param_list.append(self.param_ranges_unc[i][1])
+                    new_param_list.append(self.param_ranges_unc[i]['start'])
                     params = new_param_list
 
             # if we need to get a new parameter set from the old accepted set
@@ -215,12 +219,13 @@ class ModelRunner:
                     param_val = new_param_list[i]
 
                     # calculate the density of param_val
-                    bound_low, bound_high = self.param_ranges_unc[i][2], self.param_ranges_unc[i][3]
+                    bound_low, bound_high \
+                        = self.param_ranges_unc[i]['lower_bound'], self.param_ranges_unc[i]['upper_bound']
 
                     # normalise value and find log of PDF from appropriate distribution
-                    if self.param_ranges_unc[i][5] == 'beta':
+                    if self.param_ranges_unc[i]['distribution'] == 'beta':
                         prior_log_likelihood += beta.logpdf((param_val - bound_low) / (bound_high - bound_low), 2., 2.)
-                    elif self.param_ranges_unc[i][5] == 'uniform':
+                    elif self.param_ranges_unc[i]['distribution'] == 'uniform':
                         prior_log_likelihood += numpy.log(1. / (bound_high - bound_low))
 
                 # calculate posterior
@@ -280,7 +285,7 @@ class ModelRunner:
 
         param_dict = {}
         for i in range(len(self.param_ranges_unc)):
-            param_dict[self.param_ranges_unc[i][0]] = params[i]
+            param_dict[self.param_ranges_unc[i]['name']] = params[i]
         return param_dict
 
     def get_fitting_data(self, ):
@@ -324,11 +329,11 @@ class ModelRunner:
 
         # iterate through the parameters being used
         for i in range(len(self.param_ranges_unc)):
-            search_width = self.param_ranges_unc[i][4]
+            search_width = self.param_ranges_unc[i]['search_width']
             random = -100.
 
             # search for new parameters
-            while random < self.param_ranges_unc[i][2] or random > self.param_ranges_unc[i][3]:
+            while random < self.param_ranges_unc[i]['lower_bound'] or random > self.param_ranges_unc[i]['upper_bound']:
                 random = norm.rvs(loc=old_params[i], scale=search_width, size=1)
 
             # add them to the list
