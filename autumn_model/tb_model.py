@@ -84,15 +84,20 @@ class SimpleTbModel(BaseModel):
 
         self.inputs = inputs
         self.scenario = scenario
+        self.riskgroups = ['']
+        self.riskgroup_proportions = {'': 1.}
+        # self.riskgroups = ['_nocomorb', '_hiv']
+        # self.riskgroup_proportions = {'_nocomorb': .9, '_hiv': .1}
 
         # define all compartments, initialise as empty and then populate
         model_compartments \
             = ['susceptible', 'susceptible_vaccinated', 'latent_early', 'latent_late', 'active', 'treatment_infect',
                'treatment_noninfect']
         for each_compartment in model_compartments:
-            self.set_compartment(each_compartment, 0.)
-        self.set_compartment('susceptible', 1e6)
-        self.set_compartment('active', 1.)
+            for riskgroup in self.riskgroups:
+                self.set_compartment(each_compartment + riskgroup, 0.)
+        self.set_compartment('susceptible' + self.riskgroups[0], 1e6)
+        self.set_compartment('active' + self.riskgroups[0], 1.)
 
         # parameter setting
         for parameter, value in fixed_parameters.items():
@@ -107,7 +112,9 @@ class SimpleTbModel(BaseModel):
 
         # demographic
         self.vars['population'] = sum(self.compartments.values())
-        self.vars['rate_birth'] = self.params['demo_rate_birth'] * self.vars['population']
+        for riskgroup in self.riskgroups:
+            self.vars['rate_birth' + riskgroup] \
+                = self.params['demo_rate_birth'] * self.vars['population'] * self.riskgroup_proportions[riskgroup]
 
         # infection
         self.vars['infectious_population'] = 0.
@@ -119,42 +126,91 @@ class SimpleTbModel(BaseModel):
         self.vars['rate_force_vaccinated'] = self.vars['rate_force'] * self.params['int_vaccine_efficacy']
 
         # vaccination
-        self.vars['rate_birth_vaccinated'] = self.vars['rate_birth'] * self.vars['prop_vaccination']
-        self.vars['rate_birth'] -= self.vars['rate_birth_vaccinated']
+        for riskgroup in self.riskgroups:
+            self.vars['rate_birth_vaccinated' + riskgroup] \
+                = self.vars['rate_birth' + riskgroup] * self.vars['prop_vaccination']
+            self.vars['rate_birth' + riskgroup] -= self.vars['rate_birth_vaccinated' + riskgroup]
 
         # detection
-        self.vars['program_rate_detect'] = self.vars['program_prop_detect'] / (1. - self.vars['program_prop_detect']) \
-                                           * (self.params['tb_rate_death'] + self.params['tb_rate_recover'])
+        self.vars['program_rate_detect'] \
+            = self.vars['program_prop_detect'] / (1. - self.vars['program_prop_detect']) \
+              * (self.params['tb_rate_death'] + self.params['tb_rate_recover'])
 
     def set_flows(self):
         """
         Set inter-compartmental flows, whether time-variant or constant
         """
 
-        # demographic
-        self.set_var_entry_rate_flow('susceptible', 'rate_birth')
-        self.set_background_death_rate('demo_rate_death')
-        self.set_var_entry_rate_flow('susceptible_vaccinated', 'rate_birth_vaccinated')
+        for riskgroup in self.riskgroups:
 
-        # infection
-        self.set_var_transfer_rate_flow('susceptible', 'latent_early', 'rate_force')
-        self.set_var_transfer_rate_flow('susceptible_vaccinated', 'latent_early', 'rate_force_vaccinated')
+            # demographic
+            self.set_var_entry_rate_flow(
+                'susceptible' + riskgroup,
+                'rate_birth' + riskgroup)
+            self.set_background_death_rate(
+                'demo_rate_death')
+            self.set_var_entry_rate_flow(
+                'susceptible_vaccinated' + riskgroup,
+                'rate_birth_vaccinated' + riskgroup)
 
-        # natural history of infection and disease
-        self.set_fixed_transfer_rate_flow('latent_early', 'active', 'tb_rate_earlyprogress')
-        self.set_fixed_transfer_rate_flow('latent_early', 'latent_late', 'tb_rate_stabilise')
-        self.set_fixed_transfer_rate_flow('latent_late', 'active', 'tb_rate_lateprogress')
-        self.set_fixed_transfer_rate_flow('active', 'latent_late', 'tb_rate_recover')
-        self.set_infection_death_rate_flow('active', 'tb_rate_death')
+            # infection
+            self.set_var_transfer_rate_flow(
+                'susceptible' + riskgroup,
+                'latent_early' + riskgroup,
+                'rate_force')
+            self.set_var_transfer_rate_flow(
+                'susceptible_vaccinated' + riskgroup,
+                'latent_early' + riskgroup,
+                'rate_force_vaccinated')
 
-        # programmatic
-        self.set_var_transfer_rate_flow('active', 'treatment_infect', 'program_rate_detect')
-        self.set_fixed_transfer_rate_flow('treatment_infect', 'treatment_noninfect', 'program_rate_completion_infect')
-        self.set_fixed_transfer_rate_flow('treatment_infect', 'active', 'program_rate_default_infect')
-        self.set_fixed_transfer_rate_flow('treatment_noninfect', 'susceptible', 'program_rate_completion_noninfect')
-        self.set_fixed_transfer_rate_flow('treatment_noninfect', 'active', 'program_rate_default_noninfect')
-        self.set_infection_death_rate_flow('treatment_infect', 'program_rate_death_infect')
-        self.set_infection_death_rate_flow('treatment_noninfect', 'program_rate_death_noninfect')
+            # natural history of infection and disease
+            self.set_fixed_transfer_rate_flow(
+                'latent_early' + riskgroup,
+                'active' + riskgroup,
+                'tb_rate_earlyprogress')
+            self.set_fixed_transfer_rate_flow(
+                'latent_early' + riskgroup,
+                'latent_late' + riskgroup,
+                'tb_rate_stabilise')
+            self.set_fixed_transfer_rate_flow(
+                'latent_late' + riskgroup,
+                'active' + riskgroup,
+                'tb_rate_lateprogress')
+            self.set_fixed_transfer_rate_flow(
+                'active' + riskgroup,
+                'latent_late' + riskgroup,
+                'tb_rate_recover')
+            self.set_infection_death_rate_flow(
+                'active' + riskgroup,
+                'tb_rate_death')
+
+            # programmatic
+            self.set_var_transfer_rate_flow(
+                'active' + riskgroup,
+                'treatment_infect' + riskgroup,
+                'program_rate_detect')
+            self.set_fixed_transfer_rate_flow(
+                'treatment_infect' + riskgroup,
+                'treatment_noninfect' + riskgroup,
+                'program_rate_completion_infect')
+            self.set_fixed_transfer_rate_flow(
+                'treatment_infect' + riskgroup,
+                'active' + riskgroup,
+                'program_rate_default_infect')
+            self.set_fixed_transfer_rate_flow(
+                'treatment_noninfect' + riskgroup,
+                'susceptible' + riskgroup,
+                'program_rate_completion_noninfect')
+            self.set_fixed_transfer_rate_flow(
+                'treatment_noninfect' + riskgroup,
+                'active' + riskgroup,
+                'program_rate_default_noninfect')
+            self.set_infection_death_rate_flow(
+                'treatment_infect' + riskgroup,
+                'program_rate_death_infect')
+            self.set_infection_death_rate_flow(
+                'treatment_noninfect' + riskgroup,
+                'program_rate_death_noninfect')
 
     def calculate_diagnostic_vars(self):
         """

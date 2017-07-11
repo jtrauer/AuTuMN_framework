@@ -79,12 +79,12 @@ class Inputs:
                 self.scaleup_fns[scenario][time_variant_parameter] \
                     = curve.function_creator(self.scaleup_data[scenario][time_variant_parameter])
 
-        x_values = numpy.linspace(1900., 2050., 10001)
-        for scenario in self.scenarios:
-            result = [self.scaleup_fns[scenario]['prop_vaccination'](x) for x in x_values]
-            plt.plot(x_values, result)
-        plt.show()
-        print()
+        # x_values = numpy.linspace(1900., 2050., 10001)
+        # for scenario in self.scenarios:
+        #     result = [self.scaleup_fns[scenario]['prop_vaccination'](x) for x in x_values]
+        #     plt.plot(x_values, result)
+        # plt.show()
+        # print()
 
         # # process constant parameters
         # self.process_model_constants()

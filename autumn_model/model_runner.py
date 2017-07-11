@@ -28,7 +28,7 @@ def elementwise_list_addition(increment, list_to_increment):
 
 class ModelRunner:
 
-    def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=0):
+    def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0]):
         """
         Instantiation method for model runner.
 
@@ -569,12 +569,8 @@ if __name__ == '__main__':
         'program_rate_death_noninfect': .05 / time_late_treatment,
         'int_vaccine_efficacy': .5
     }
-    scenarios_to_run = [0, 1, 2]
-
-    model_runner = ModelRunner(country='India',
-                               fixed_parameters=fixed_parameters,
-                               mode='manual',
-                               scenarios_to_run=scenarios_to_run)
+    model_runner \
+        = ModelRunner(country='India', fixed_parameters=fixed_parameters, mode='manual', scenarios_to_run=[0, 1, 2])
     model_runner.master_runner()
     project = Project(model_runner)
     project.master_outputs_runner()
