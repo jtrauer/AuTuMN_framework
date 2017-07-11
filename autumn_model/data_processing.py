@@ -3,7 +3,7 @@ import spreadsheet
 import tool_kit
 import numpy
 import matplotlib.pyplot as plt
-# from curve import scale_up_function, freeze_curve
+import curve
 
 
 class Inputs:
@@ -68,26 +68,32 @@ class Inputs:
 
         self.process_case_detection()
 
-        def sinusiodal_scaleup(time, x_start, y_start, duration, magnitude):
-            return (-numpy.cos(numpy.pi * ((time - x_start) / duration)) + 1) / 2 * magnitude + y_start
+        def function_creator(data):
 
-        (keys, values) = zip(*self.scaleup_data['program_rate_detect'].iteritems())
-        def scaleup_function(time):
-            if time < keys[0]:
-                return 0.
-            elif keys[-1] <= time:
-                return values[-1]
-            else:
-                for k in range(len(keys)):
-                    if keys[k] <= time < keys[k + 1]:
-                        return sinusiodal_scaleup(
-                            time, keys[k], values[k], float(keys[k + 1] - keys[k]), values[k + 1] - values[k])
+            def scaleup_function(time):
+                (keys, values) = zip(*data.iteritems())
+                if time < keys[0]:
+                    return 0.
+                elif keys[-1] <= time:
+                    return values[-1]
+                else:
+                    for k in range(len(keys)):
+                        if keys[k] <= time < keys[k + 1]:
+                            return curve.sinusiodal_scaleup(
+                                time, keys[k], values[k], float(keys[k + 1] - keys[k]), values[k + 1] - values[k])
+            return scaleup_function
+
+        function_dict = {}
+
+        function_dict['case_detection'] = function_creator(self.scaleup_data['program_rate_detect'])
+
+        print(function_dict['case_detection'](1990.))
 
         # x_values = numpy.linspace(1900., 2050., 10001)
         # result = [scaleup_function(x) for x in x_values]
         # print(result)
         # plt.plot(x_values, result)
-        # plt.plot(keys, values, 'o')
+        # # plt.plot(keys, values, 'o')
         # plt.show()
         # print()
 
