@@ -68,34 +68,19 @@ class Inputs:
 
         self.process_case_detection()
 
-        def function_creator(data):
-
-            def scaleup_function(time):
-                (keys, values) = zip(*data.iteritems())
-                if time < keys[0]:
-                    return 0.
-                elif keys[-1] <= time:
-                    return values[-1]
-                else:
-                    for k in range(len(keys)):
-                        if keys[k] <= time < keys[k + 1]:
-                            return curve.sinusiodal_scaleup(
-                                time, keys[k], values[k], float(keys[k + 1] - keys[k]), values[k + 1] - values[k])
-            return scaleup_function
-
         function_dict = {}
 
-        function_dict['case_detection'] = function_creator(self.scaleup_data['program_rate_detect'])
+        function_dict['case_detection'] = curve.function_creator(self.scaleup_data['program_rate_detect'])
 
         print(function_dict['case_detection'](1990.))
 
-        # x_values = numpy.linspace(1900., 2050., 10001)
-        # result = [scaleup_function(x) for x in x_values]
-        # print(result)
-        # plt.plot(x_values, result)
-        # # plt.plot(keys, values, 'o')
-        # plt.show()
-        # print()
+        x_values = numpy.linspace(1900., 2050., 10001)
+        result = [function_dict['case_detection'](x) for x in x_values]
+        print(result)
+        plt.plot(x_values, result)
+        # plt.plot(keys, values, 'o')
+        plt.show()
+        print()
 
         # # process constant parameters
         # self.process_model_constants()
