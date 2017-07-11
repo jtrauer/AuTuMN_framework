@@ -71,19 +71,20 @@ class Inputs:
         for scenario in self.scenarios:
             self.scaleup_data[scenario]['prop_vaccination'] = {1921: 0., 1980: .8, 2015: .85}
             if scenario == 1:
-                self.scaleup_data[scenario]['prop_vaccination'][2017] = 1.
-            elif scenario == 2:
-                self.scaleup_data[scenario]['program_prop_detect'][2017] = .9
+                self.scaleup_data[1]['prop_vaccination'][2020] = .99
+            if scenario == 2:
+                self.scaleup_data[2]['program_prop_detect'][2017] = .9
             self.scaleup_fns[scenario] = {}
             for time_variant_parameter in ['program_prop_detect', 'prop_vaccination']:
                 self.scaleup_fns[scenario][time_variant_parameter] \
                     = curve.function_creator(self.scaleup_data[scenario][time_variant_parameter])
 
-        # x_values = numpy.linspace(1900., 2050., 10001)
-        # result = [self.scaleup_fns['program_rate_detect'](x) for x in x_values]
-        # plt.plot(x_values, result)
-        # plt.show()
-        # print()
+        x_values = numpy.linspace(1900., 2050., 10001)
+        for scenario in self.scenarios:
+            result = [self.scaleup_fns[scenario]['prop_vaccination'](x) for x in x_values]
+            plt.plot(x_values, result)
+        plt.show()
+        print()
 
         # # process constant parameters
         # self.process_model_constants()

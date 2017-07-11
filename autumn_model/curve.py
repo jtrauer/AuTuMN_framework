@@ -1,5 +1,6 @@
 
 import numpy
+import tool_kit
 
 
 def sinusiodal_scaleup(time, x_start, y_start, duration, magnitude):
@@ -29,7 +30,7 @@ def function_creator(input_dict):
     """
 
     def scaleup_function(time):
-        (time_data, values) = zip(*input_dict.iteritems())
+        time_data, values = tool_kit.extract_ordered_list_from_dictionary(input_dict)
         if time < time_data[0]:
             return 0.
         elif time_data[-1] <= time:

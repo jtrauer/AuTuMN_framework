@@ -54,5 +54,44 @@ def replace_specified_value(a_list, new_val, old_value):
     return [new_val if val == old_value else val for val in a_list]
 
 
+def sort_dictionary_to_list_by_keys(dictionary):
+    """
+    Extract a list of paired tuples with each tuple being a key, value pair from the input dictionary and the order of
+    the list according to the order of the keys of the dictionary.
+
+    Args:
+         dictionary: Input dictionary with keys that have an inherent ordering
+    Return:
+         Ordered list containing pairs that were keys and values
+    """
+
+    return [(i, dictionary[i]) for i in sorted(dictionary)]
+
+
+def extract_list_of_paired_tuples_to_list(list_of_paired_tuples):
+    """
+    Extract the elements of the list created by sort_dictionary_to_list_by_keys into two similarly ordered lists.
+
+    Args:
+         list_of_paired_tuples: Expected to be the output of sort_dictionary_to_list_by_keys
+    Return:
+         Two lists, one for the keys of the original dictionary and the other for the values
+    """
+
+    keys = [i[0] for i in list_of_paired_tuples]
+    values = [i[1] for i in list_of_paired_tuples]
+    return keys, values
+
+
+def extract_ordered_list_from_dictionary(dictionary):
+    """
+    Simple function to just combine the two preceding functions.
+
+    Return:
+          Return the two ordered lists directly
+    """
+
+    return extract_list_of_paired_tuples_to_list(sort_dictionary_to_list_by_keys(dictionary))
+
 
 
