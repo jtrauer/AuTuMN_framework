@@ -116,16 +116,15 @@ class SimpleTbModel(BaseModel):
                 self.vars['infectious_population'] += self.compartments[label]
         self.vars['rate_force'] = \
             self.params['tb_n_contact'] * self.vars['infectious_population'] / self.vars['population']
-
-
-        self.vars['rate_birth_vaccinated'] = self.vars['rate_birth'] * self.vars['prop_vaccination']
-        self.vars['rate_birth'] -= self.vars['rate_birth_vaccinated']
         self.vars['rate_force_vaccinated'] = self.vars['rate_force'] * self.params['int_vaccine_efficacy']
 
+        # vaccination
+        self.vars['rate_birth_vaccinated'] = self.vars['rate_birth'] * self.vars['prop_vaccination']
+        self.vars['rate_birth'] -= self.vars['rate_birth_vaccinated']
+
         # detection
-        self.vars['program_rate_detect'] = self.vars['program_prop_detect'] \
-                                           * (self.params['tb_rate_death'] + self.params['tb_rate_recover']) \
-                                           / (1. - self.vars['program_prop_detect'])
+        self.vars['program_rate_detect'] = self.vars['program_prop_detect'] / (1. - self.vars['program_prop_detect']) \
+                                           * (self.params['tb_rate_death'] + self.params['tb_rate_recover'])
 
     def set_flows(self):
         """
@@ -135,9 +134,11 @@ class SimpleTbModel(BaseModel):
         # demographic
         self.set_var_entry_rate_flow('susceptible', 'rate_birth')
         self.set_background_death_rate('demo_rate_death')
+        self.set_var_entry_rate_flow('susceptible_vaccinated', 'rate_birth_vaccinated')
 
         # infection
         self.set_var_transfer_rate_flow('susceptible', 'latent_early', 'rate_force')
+        self.set_var_transfer_rate_flow('susceptible_vaccinated', 'latent_early', 'rate_force_vaccinated')
 
         # natural history of infection and disease
         self.set_fixed_transfer_rate_flow('latent_early', 'active', 'tb_rate_earlyprogress')
@@ -154,9 +155,6 @@ class SimpleTbModel(BaseModel):
         self.set_fixed_transfer_rate_flow('treatment_noninfect', 'active', 'program_rate_default_noninfect')
         self.set_infection_death_rate_flow('treatment_infect', 'program_rate_death_infect')
         self.set_infection_death_rate_flow('treatment_noninfect', 'program_rate_death_noninfect')
-
-        self.set_var_entry_rate_flow('susceptible_vaccinated', 'rate_birth_vaccinated')
-        self.set_var_transfer_rate_flow('susceptible_vaccinated', 'latent_early', 'rate_force_vaccinated')
 
     def calculate_diagnostic_vars(self):
         """

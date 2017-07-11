@@ -68,7 +68,7 @@ class Inputs:
 
         self.process_case_detection()
 
-        self.scaleup_data['prop_vaccination'] = {1921: 0., 1980: 80., 2015: 95.}
+        self.scaleup_data['prop_vaccination'] = {1921: 0., 1980: .8, 2015: .95}
 
         for time_variant_parameter in ['program_prop_detect', 'prop_vaccination']:
             self.scaleup_fns[time_variant_parameter] = curve.function_creator(self.scaleup_data[time_variant_parameter])

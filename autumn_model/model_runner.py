@@ -28,7 +28,7 @@ def elementwise_list_addition(increment, list_to_increment):
 
 class ModelRunner:
 
-    def __init__(self, country, fixed_parameters, time_variant_parameters={}, mode='manual', scenarios_to_run=0):
+    def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=0):
         """
         Instantiation method for model runner.
 
@@ -40,7 +40,7 @@ class ModelRunner:
 
         self.country = country
         self.fixed_parameters = fixed_parameters
-        self.time_variant_parameters = time_variant_parameters
+        # self.time_variant_parameters = time_variant_parameters
         self.mode = mode
         self.scenarios_to_run = scenarios_to_run
 
@@ -550,42 +550,29 @@ class ModelRunner:
 
 
 if __name__ == '__main__':
-    time_treatment = .5
+    time_early_treatment = 1. / 52.
+    time_late_treatment = .5 - time_early_treatment
     fixed_parameters = {
         'demo_rate_birth': 20. / 1e3,
         'demo_rate_death': 1. / 65,
         'tb_n_contact': 60.,
         'tb_rate_earlyprogress': .1 / .5,
-        'tb_rate_lateprogress': .1 / 100.,
+        'tb_rate_lateprogress': .1 / 20.,
         'tb_rate_stabilise': .9 / .5,
         'tb_rate_recover': .6 / 3.,
         'tb_rate_death': .4 / 3.,
-        'program_rate_completion_infect': .9 / time_treatment,
-        'program_rate_default_infect': .05 / time_treatment,
-        'program_rate_death_infect': .05 / time_treatment,
-        'program_rate_completion_noninfect': .9 / time_treatment,
-        'program_rate_default_noninfect': .05 / time_treatment,
-        'program_rate_death_noninfect': .05 / time_treatment,
+        'program_rate_completion_infect': .98 / time_early_treatment,
+        'program_rate_default_infect': .01 / time_early_treatment,
+        'program_rate_death_infect': .01 / time_early_treatment,
+        'program_rate_completion_noninfect': .9 / time_late_treatment,
+        'program_rate_default_noninfect': .05 / time_late_treatment,
+        'program_rate_death_noninfect': .05 / time_late_treatment,
         'int_vaccine_efficacy': .5
     }
     scenarios_to_run = [0, 1]
-    time_variant_parameters = {}
-    for scenario in scenarios_to_run:
-        time_variant_parameters[scenario] = {}
-        curve1 = make_sigmoidal_curve(y_high=2, y_low=0, x_start=1950, x_inflect=1994, multiplier=4)
-        curve2 = make_sigmoidal_curve(y_high=4, y_low=2, x_start=1994, x_inflect=2005, multiplier=3)
-        time_variant_parameters[scenario]['rate_program_detect'] \
-            = lambda x: curve1(x) if x < 1990 else curve2(x)
-        time_variant_parameters[scenario]['prop_vaccination'] \
-            = make_sigmoidal_curve(y_high=.95, y_low=0, x_start=1921, x_inflect=2006, multiplier=3)
-    complete_vaccination_scenario \
-        = make_sigmoidal_curve(y_high=1., y_low=0.95, x_start=2015, x_inflect=2016, multiplier=3)
-    time_variant_parameters[1]['prop_vaccination'] \
-        = lambda x: time_variant_parameters[0]['prop_vaccination'](x) if x < 2015 else complete_vaccination_scenario(x)
 
     model_runner = ModelRunner(country='India',
                                fixed_parameters=fixed_parameters,
-                               time_variant_parameters=time_variant_parameters,
                                mode='manual',
                                scenarios_to_run=scenarios_to_run)
     model_runner.master_runner()
