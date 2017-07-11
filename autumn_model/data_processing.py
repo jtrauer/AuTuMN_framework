@@ -1,7 +1,8 @@
 
 import spreadsheet
-import copy
 import tool_kit
+import numpy
+import matplotlib.pyplot as plt
 # from curve import scale_up_function, freeze_curve
 
 
@@ -65,6 +66,31 @@ class Inputs:
         print('Reading Excel sheets with input data.\n')
         self.original_data = spreadsheet.read_input_data_xls(self.find_keys_of_sheets_to_read(), self.country)
 
+        self.process_case_detection()
+
+        def sinusiodal_scaleup(time, x_start, y_start, duration, magnitude):
+            return (-numpy.cos(numpy.pi * ((time - x_start) / duration)) + 1) / 2 * magnitude + y_start
+
+        (keys, values) = zip(*self.scaleup_data['program_rate_detect'].iteritems())
+        def scaleup_function(time):
+            if time < keys[0]:
+                return 0.
+            elif keys[-1] <= time:
+                return values[-1]
+            else:
+                for k in range(len(keys)):
+                    if keys[k] <= time < keys[k + 1]:
+                        return sinusiodal_scaleup(
+                            time, keys[k], values[k], float(keys[k + 1] - keys[k]), values[k + 1] - values[k])
+
+        # x_values = numpy.linspace(1900., 2050., 10001)
+        # result = [scaleup_function(x) for x in x_values]
+        # print(result)
+        # plt.plot(x_values, result)
+        # plt.plot(keys, values, 'o')
+        # plt.show()
+        # print()
+
         # # process constant parameters
         # self.process_model_constants()
         #
@@ -101,6 +127,11 @@ class Inputs:
         #
         # # perform checks (undeveloped still)
         # self.checks()
+
+    def process_case_detection(self):
+
+        self.scaleup_data['program_rate_detect'] = self.original_data['tb']['c_cdr']
+        self.scaleup_data['program_rate_detect'][1950] = 0.
 
     #############################################
     ### Constant parameter processing methods ###
@@ -301,18 +332,6 @@ class Inputs:
                             and self.original_data['country_programs'][program_var]['load_data'] == u'yes':
                         self.time_variants[program_var][year] \
                             = self.original_data['default_programs'][program_var][year]
-
-    def load_vacc_detect_time_variants(self):
-        """
-        Adds vaccination and case detection time-variants to the manually entered data loaded from the spreadsheets.
-        Note that the manual inputs over-ride the loaded data if both are present.
-        """
-
-        # case detection
-        if self.time_variants['program_perc_detect']['load_data'] == u'yes':
-            for year in self.original_data['tb']['c_cdr']:
-                if year not in self.time_variants['program_perc_detect']:
-                    self.time_variants['program_perc_detect'][year] = self.original_data['tb']['c_cdr'][year]
 
     def convert_percentages_to_proportions(self):
         """
