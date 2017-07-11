@@ -1,6 +1,7 @@
 
 import numpy
 
+
 def sinusiodal_scaleup(time, x_start, y_start, duration, magnitude):
     """
     Uses a cosine function to create a simple sinusional function scaling up over "magnitude" and period of time
@@ -17,17 +18,25 @@ def sinusiodal_scaleup(time, x_start, y_start, duration, magnitude):
     return (-numpy.cos(numpy.pi * ((time - x_start) / duration)) + 1) / 2 * magnitude + y_start
 
 
-def function_creator(data):
+def function_creator(input_dict):
+    """
+    Creates a scaling function from the input data, returning the function as an object, on the assumption the parameter
+    is scaling from an initial value of zero to a constant final value at the latest year of the input dictionary.
+    Uses the previous function (sinusoidal_scaleup) in a piecewise manner to create the overall function.
+
+    Args:
+         input_dict: Dictionary with keys time in years (usually integers) and values the values of parameters to be fit
+    """
+
     def scaleup_function(time):
-        (keys, values) = zip(*data.iteritems())
-        if time < keys[0]:
+        (time_data, values) = zip(*input_dict.iteritems())
+        if time < time_data[0]:
             return 0.
-        elif keys[-1] <= time:
+        elif time_data[-1] <= time:
             return values[-1]
         else:
-            for k in range(len(keys)):
-                if keys[k] <= time < keys[k + 1]:
-                    return sinusiodal_scaleup(
-                        time, keys[k], values[k], float(keys[k + 1] - keys[k]), values[k + 1] - values[k])
-
+            for k in range(len(time_data)):
+                if time_data[k] <= time < time_data[k + 1]:
+                    return sinusiodal_scaleup(time, time_data[k], values[k],
+                                              float(time_data[k + 1] - time_data[k]), values[k + 1] - values[k])
     return scaleup_function

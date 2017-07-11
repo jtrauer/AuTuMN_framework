@@ -68,17 +68,12 @@ class Inputs:
 
         self.process_case_detection()
 
-        function_dict = {}
-
-        function_dict['case_detection'] = curve.function_creator(self.scaleup_data['program_rate_detect'])
-
-        print(function_dict['case_detection'](1990.))
+        for time_variant_parameter in ['program_rate_detect']:
+            self.scaleup_fns[time_variant_parameter] = curve.function_creator(self.scaleup_data[time_variant_parameter])
 
         x_values = numpy.linspace(1900., 2050., 10001)
-        result = [function_dict['case_detection'](x) for x in x_values]
-        print(result)
+        result = [self.scaleup_fns['program_rate_detect'](x) for x in x_values]
         plt.plot(x_values, result)
-        # plt.plot(keys, values, 'o')
         plt.show()
         print()
 
