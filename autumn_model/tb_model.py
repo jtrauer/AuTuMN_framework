@@ -117,9 +117,15 @@ class SimpleTbModel(BaseModel):
         self.vars['rate_force'] = \
             self.params['tb_n_contact'] * self.vars['infectious_population'] / self.vars['population']
 
+
         self.vars['rate_birth_vaccinated'] = self.vars['rate_birth'] * self.vars['prop_vaccination']
         self.vars['rate_birth'] -= self.vars['rate_birth_vaccinated']
         self.vars['rate_force_vaccinated'] = self.vars['rate_force'] * self.params['int_vaccine_efficacy']
+
+        # detection
+        self.vars['program_rate_detect'] = self.vars['program_prop_detect'] \
+                                           * (self.params['tb_rate_death'] + self.params['tb_rate_recover']) \
+                                           / (1. - self.vars['program_prop_detect'])
 
     def set_flows(self):
         """

@@ -70,7 +70,7 @@ class Inputs:
 
         self.scaleup_data['prop_vaccination'] = {1921: 0., 1980: 80., 2015: 95.}
 
-        for time_variant_parameter in ['program_rate_detect', 'prop_vaccination']:
+        for time_variant_parameter in ['program_prop_detect', 'prop_vaccination']:
             self.scaleup_fns[time_variant_parameter] = curve.function_creator(self.scaleup_data[time_variant_parameter])
 
         # x_values = numpy.linspace(1900., 2050., 10001)
@@ -111,8 +111,8 @@ class Inputs:
 
     def process_case_detection(self):
 
-        self.scaleup_data['program_rate_detect'] = self.original_data['tb']['c_cdr']
-        self.scaleup_data['program_rate_detect'][1950] = 0.
+        self.scaleup_data['program_prop_detect'] = {i: j / 1e2 for i, j in self.original_data['tb']['c_cdr'].items()}
+        self.scaleup_data['program_prop_detect'][1950] = 0.
 
     #############################################
     ### Constant parameter processing methods ###

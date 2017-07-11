@@ -106,7 +106,7 @@ class ModelRunner:
             # describe model and integrate
             print('Running scenario ' + str(scenario) + ' conditions for ' + self.country +
                   ' using single parameter set')
-            self.model_dict[scenario].make_times(1900, 2050, .05)
+            self.model_dict[scenario].make_times(1850, 2050, .05)
             self.model_dict[scenario].integrate(method='explicit')
 
             # model interpretation for each scenario
@@ -554,7 +554,7 @@ if __name__ == '__main__':
     fixed_parameters = {
         'demo_rate_birth': 20. / 1e3,
         'demo_rate_death': 1. / 65,
-        'tb_n_contact': 40.,
+        'tb_n_contact': 60.,
         'tb_rate_earlyprogress': .1 / .5,
         'tb_rate_lateprogress': .1 / 100.,
         'tb_rate_stabilise': .9 / .5,
