@@ -59,30 +59,20 @@ class ModelRunner:
         # Uncertainty-related attributes
         # self.is_last_run_success = False
         # self.loglikelihoods = []
-        # self.outputs_unc = [{'key': 'incidence',
-        #                      'posterior_width': None,
-        #                      'width_multiplier': 2.  # Width of normal posterior relative to range of parameter values allowed
-        #                      }]
-        # self.all_parameters_tried = {}
         # self.whether_accepted_list = []
-        # self.accepted_indices = []
-        # self.rejected_indices = []
         # self.solns_for_extraction = ['compartment_soln', 'fraction_soln']
         # self.arrays_for_extraction = ['flow_array', 'fraction_array', 'soln_array', 'var_array', 'costs']
         # self.acceptance_dict = {}
         # self.rejection_dict = {}
-        # self.uncertainty_percentiles = {}
-        # self.percentiles = [2.5, 50., 97.5]
-        # self.accepted_no_burn_in_indices = []
-        # self.random_start = False  # whether to start from a random point, as opposed to the manually calibrated value
         #
         # output-related attributes
         self.epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']
         self.epi_outputs = {}
         self.epi_outputs_uncertainty = []
 
-        # parameter name, mean of prior, sd of prior, lower bound, upper bound
-        self.param_ranges_unc = [['tb_n_contact', 25., 15., 0., 50., 5., 'beta']]
+        # list of uncertainty parameters, with standard ordering of elements as follows:
+        # parameter name string, starting point, lower bound of prior, upper bound of prior, search width, distribution
+        self.param_ranges_unc = [['tb_n_contact', 25., 0., 50., 5., 'beta']]
 
     ###############################################
     ### Master methods to run all other methods ###
@@ -225,12 +215,12 @@ class ModelRunner:
                     param_val = new_param_list[i]
 
                     # calculate the density of param_val
-                    bound_low, bound_high = self.param_ranges_unc[i][3], self.param_ranges_unc[i][4]
+                    bound_low, bound_high = self.param_ranges_unc[i][2], self.param_ranges_unc[i][3]
 
                     # normalise value and find log of PDF from appropriate distribution
-                    if self.param_ranges_unc[i][6] == 'beta':
+                    if self.param_ranges_unc[i][5] == 'beta':
                         prior_log_likelihood += beta.logpdf((param_val - bound_low) / (bound_high - bound_low), 2., 2.)
-                    elif self.param_ranges_unc[i][6] == 'uniform':
+                    elif self.param_ranges_unc[i][5] == 'uniform':
                         prior_log_likelihood += numpy.log(1. / (bound_high - bound_low))
 
                 # calculate posterior
@@ -334,11 +324,11 @@ class ModelRunner:
 
         # iterate through the parameters being used
         for i in range(len(self.param_ranges_unc)):
-            search_width = self.param_ranges_unc[i][5]
+            search_width = self.param_ranges_unc[i][4]
             random = -100.
 
             # search for new parameters
-            while random < self.param_ranges_unc[i][3] or random > self.param_ranges_unc[i][4]:
+            while random < self.param_ranges_unc[i][2] or random > self.param_ranges_unc[i][3]:
                 random = norm.rvs(loc=old_params[i], scale=search_width, size=1)
 
             # add them to the list

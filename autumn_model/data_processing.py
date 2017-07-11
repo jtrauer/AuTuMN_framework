@@ -21,7 +21,6 @@ class Inputs:
         self.model_constants = {}
         self.scaleup_data = {}
         self.scaleup_fns = {}
-        self.param_ranges_unc = []
         self.data_to_fit = {}
         # for incidence for ex, width of normal posterior relative to CI width in data
         self.outputs_unc = [{'key': 'incidence', 'posterior_width': None, 'width_multiplier': 2.}]
@@ -398,19 +397,6 @@ class Inputs:
         if self.gui_inputs['output_uncertainty']:
             self.find_uncertainty_distributions()
             self.get_data_to_fit()
-
-    def find_uncertainty_distributions(self):
-        """
-        Populate a dictionary of uncertainty parameters from the inputs dictionary in a format that matches code for
-        uncertainty.
-        """
-
-        for param in self.model_constants:
-            if '_uncertainty' in param and type(self.model_constants[param]) == dict:
-                self.param_ranges_unc += [{'key': param[:-12],
-                                           'bounds': [self.model_constants[param]['lower'],
-                                                      self.model_constants[param]['upper']],
-                                           'distribution': 'uniform'}]
 
     def get_data_to_fit(self):
         """
