@@ -47,7 +47,7 @@ class ModelRunner:
         self.mode = mode
         self.scenarios_to_run = scenarios_to_run
 
-        self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run)
+        self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run, self.fixed_parameters)
         self.inputs.read_and_load_data()
 
         # loading of inputs

@@ -8,11 +8,11 @@ import curve
 
 class Inputs:
 
-    def __init__(self, country, scenarios_to_run):
+    def __init__(self, country, scenarios_to_run, fixed_parameters):
 
-        # GUI inputs
         self.country = country
         self.scenarios = scenarios_to_run
+        self.fixed_parameters = fixed_parameters
 
         # parameter structures
         self.original_data = None
@@ -26,14 +26,7 @@ class Inputs:
         self.outputs_unc = [{'key': 'incidence', 'posterior_width': None, 'width_multiplier': 2.}]
 
         # model structure
-        self.available_strains = ['_ds', '_mdr', '_xdr']
-        self.available_organs = ['_smearpos', '_smearneg', '_extrapul']
-        self.agegroups = None
         self.riskgroups = []
-        self.mixing = {}
-        self.compartment_types \
-            = ['susceptible_fully', 'susceptible_vac', 'susceptible_treated', 'latent_early', 'latent_late', 'active',
-               'detect', 'missed', 'treatment_infect', 'treatment_noninfect']
 
         # interventions
         self.irrelevant_time_variants = []
@@ -64,6 +57,8 @@ class Inputs:
         # read all required data
         print('Reading Excel sheets with input data.\n')
         self.original_data = spreadsheet.read_input_data_xls(self.find_keys_of_sheets_to_read(), self.country)
+
+        self.process_parameters()
 
         self.process_case_detection()
 
@@ -114,6 +109,21 @@ class Inputs:
         #
         # # perform checks (undeveloped still)
         # self.checks()
+
+    def process_parameters(self):
+
+        self.fixed_parameters['time_late_treatment'] \
+            = self.fixed_parameters['time_treatment'] - self.fixed_parameters['time_early_treatment']
+
+        derived_parameters = {}
+        for param in self.fixed_parameters:
+            if 'program_prop' in param and '_infect' in param:
+                derived_parameters[param.replace('_prop', '_rate')] \
+                    = self.fixed_parameters[param] / self.fixed_parameters['time_early_treatment']
+            elif 'program_prop' in param and '_noninfect' in param:
+                derived_parameters[param.replace('_prop', '_rate')] \
+                    = self.fixed_parameters[param] / self.fixed_parameters['time_late_treatment']
+        self.fixed_parameters.update(derived_parameters)
 
     def process_case_detection(self):
 
