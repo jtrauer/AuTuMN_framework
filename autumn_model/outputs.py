@@ -265,7 +265,7 @@ class Project:
         yaxis_label, title = find_standard_output_styles(outputs)
         fig = pyplot.figure(1)
 
-        # loop through indicators
+        # loop through indicators (ignoring population)
         for o, output in enumerate(outputs[1:]):
 
             # preliminaries
@@ -286,7 +286,7 @@ class Project:
                             linewidth=linewidths[centile], color='k')
 
             self.tidy_axis(ax, title=title[output], start_time=start_time,
-                           legend=(o == len(outputs) - 1 and len(self.scenarios) > 1),
+                           legend=(o == len(outputs) - 2 and len(self.scenarios) > 1),
                            y_axis_type='raw', y_label=yaxis_label[output])
 
         # add main title and save
