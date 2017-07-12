@@ -169,24 +169,19 @@ class ModelRunner:
         # prepare for uncertainty loop
         n_accepted = 0
         prev_log_likelihood = -1e10
+        run = 0
 
-        # instantiate uncertainty model object
+        # instantiate uncertainty model object for baseline scenario
         self.model_dict['uncertainty'] = tb_model.SimpleTbModel(self.fixed_parameters, self.inputs, 0)
 
+        # get initial set of parameters
+        new_param_list = []
+        for i in range(len(self.param_ranges_unc)):
+            new_param_list.append(self.param_ranges_unc[i]['start'])
+            params = new_param_list
+
         # until a sufficient number of parameters are accepted
-        run = 0
         while n_accepted < self.uncertainty_accepted_runs:
-
-            # if we are using the first parameter set
-            if run == 0:
-                new_param_list = []
-                for i in range(len(self.param_ranges_unc)):
-                    new_param_list.append(self.param_ranges_unc[i]['start'])
-                    params = new_param_list
-
-            # if we need to get a new parameter set from the old accepted set
-            else:
-                new_param_list = self.update_params(params)
 
             # run baseline integration (includes parameter checking, parameter setting and recording success/failure)
             self.run_with_params(new_param_list)
@@ -240,11 +235,12 @@ class ModelRunner:
                 print(accepted)
                 print('incidence')
                 print(incidence_result)
-                print('beta')
-                print(new_param_list[0])
-                print('death')
-                print(new_param_list[1])
+                for i in range(len(self.param_ranges_unc)):
+                    print(self.param_ranges_unc[i]['name'])
+                    print(new_param_list[i])
                 print('\n')
+
+            new_param_list = self.update_params(params)
 
     def set_model_with_params(self, param_dict):
         """
