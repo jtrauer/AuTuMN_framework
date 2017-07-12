@@ -213,7 +213,7 @@ class Project:
         else:
             return line_styles[n - 1]
 
-    def tidy_axis(self, ax, subplot_grid, title='', start_time=0., legend=False, x_label='', y_label='',
+    def tidy_axis(self, ax, title='', start_time=0., legend=False, x_label='', y_label='',
                   x_axis_type='time', y_axis_type='scaled', x_sig_figs=0, y_sig_figs=0):
         """
         Method to make cosmetic changes to a set of plot axes.
@@ -329,14 +329,13 @@ class Project:
         # standard preliminaries
         start_time = 2000
         colour, indices, yaxis_label, title, patch_colour = find_standard_output_styles(outputs, lightening_factor=0.3)
-        subplot_grid = [1, len(outputs) - 1]
         fig = self.set_and_update_figure()
 
         # loop through indicators
         for o, output in enumerate(outputs[1:]):
 
             # preliminaries
-            ax = fig.add_subplot(subplot_grid[0], subplot_grid[1], o + 1)
+            ax = fig.add_subplot(1, len(outputs) - 1, o + 1)
 
             # plotting (manual or uncertainty)
             if self.mode == 'manual':
@@ -352,17 +351,13 @@ class Project:
                             self.model_runner.epi_outputs_uncertainty_centiles[output][centile][self.start_time_index:],
                             linewidth=linewidths[centile], color='k')
 
-            self.tidy_axis(ax, subplot_grid, title=title[o], start_time=start_time,
+            self.tidy_axis(ax, title=title[o], start_time=start_time,
                            legend=(o == len(outputs) - 1 and len(self.scenarios) > 1),
                            y_axis_type='raw', y_label=yaxis_label[o])
 
         # add main title and save
         fig.suptitle(self.country + ' model outputs', fontsize=self.suptitle_size)
         self.save_figure(fig, '_outputs')
-
-    ############################
-    ### Miscellaneous method ###
-    ############################
 
     def open_output_directory(self):
         """
