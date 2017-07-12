@@ -7,6 +7,7 @@ mode = 'manual'  # in AuTuMN_framework, must be either 'manual' or 'uncertainty'
 country = 'India'  # must accord with the country string used in the Global TB Report
 scenarios_to_run = [0, 1, 2]  # scenarios to be run
 epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']  # epidemiological outputs to be assessed
+plot_start_time = 2005
 input_parameters = {'demo_rate_birth': 20. / 1e3,
                     'demo_rate_death': 1. / 65,
                     'tb_n_contact': 20.,
@@ -53,5 +54,5 @@ model_runner = ModelRunner(country,
                            integration_times,
                            target_incidence)
 model_runner.master_runner()
-project = Project(model_runner)
+project = Project(model_runner, plot_start_time)
 project.master_outputs_runner()
