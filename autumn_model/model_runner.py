@@ -32,7 +32,8 @@ def elementwise_list_addition(increment, list_to_increment):
 class ModelRunner:
 
     def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0], param_ranges_unc=[],
-                 epi_outputs_to_analyse=[], uncertainty_accepted_runs=100, burn_in=0):
+                 epi_outputs_to_analyse=[], uncertainty_accepted_runs=100, burn_in=0,
+                 integration_times=[1900, 2035, .05]):
         """
         Instantiation method for model runner.
 
@@ -50,6 +51,7 @@ class ModelRunner:
         self.epi_outputs_to_analyse = epi_outputs_to_analyse
         self.uncertainty_accepted_runs = uncertainty_accepted_runs
         self.burn_in = burn_in
+        self.integration_times = integration_times
 
         self.accepted_indices = []
 
@@ -95,7 +97,9 @@ class ModelRunner:
             # describe model and integrate
             print('Running scenario ' + str(scenario) + ' conditions for ' + self.country +
                   ' using single parameter set')
-            self.model_dict[scenario].make_times(1850, 2035, .05)
+            self.model_dict[scenario].make_times(self.integration_times[0],
+                                                 self.integration_times[1],
+                                                 self.integration_times[2])
             self.model_dict[scenario].integrate(method='explicit')
 
             # model interpretation for each scenario
@@ -355,7 +359,9 @@ class ModelRunner:
         self.set_model_with_params(param_dict)
         self.is_last_run_success = True
         try:
-            self.model_dict['uncertainty'].make_times(1850, 2035, .05)
+            self.model_dict['uncertainty'].make_times(self.integration_times[0],
+                                                      self.integration_times[1],
+                                                      self.integration_times[2])
             self.model_dict['uncertainty'].integrate()
         except:
             print "Warning: parameters=%s failed with model" % params
