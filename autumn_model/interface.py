@@ -2,12 +2,18 @@
 from model_runner import ModelRunner
 from outputs import Project
 
-# user inputs (which could be moved to a GUI as required)
-mode = 'manual'  # in AuTuMN_framework, must be either 'manual' or 'uncertainty'
+"""
+This script runs the AuTuMN_framework platform, setting all the input parameters, selections and output options required
+by the remainder of the platform. As all the user interaction can occur through this script, graphical user interfaces
+can be constructed out of the code contained here.
+"""
+
+# user inputs
+mode = 'manual'  # must be either 'manual' or 'uncertainty'
 country = 'India'  # must accord with the country string used in the Global TB Report
 scenarios_to_run = [0, 1, 2]  # scenarios to be run
 epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']  # epidemiological outputs to be assessed
-plot_start_time = 2005
+plot_start_time = 2005  # left border of x-axes on output plots
 input_parameters = {'demo_rate_birth': 20. / 1e3,
                     'demo_rate_death': 1. / 65,
                     'tb_n_contact': 20.,
@@ -34,25 +40,19 @@ param_ranges_unc = [{'name': 'tb_n_contact',
                      'upper_bound': 50.,
                      'search_width': 5.,
                      'distribution': 'beta'}]
-uncertainty_accepted_runs = 4  # how many accepted runs needed before uncertainty analysis finishes (including burn-in)
-burn_in = 2  # number of runs to discard (both accepted and rejected)
-integration_times = [1850, 2035, .05]  # must contain three-element list of 0: start time, 1: end time, 2: time step
+uncertainty_accepted_runs = 50  # how many accepted runs needed before uncertainty analysis finishes (including burn-in)
+burn_in = 5  # number of runs to discard (both accepted and rejected)
+integration_times = {'start': 1850,
+                     'finish': 2035,
+                     'step': .05}  # dictionary for constructing integration times with fixed keys expected by runner
 target_incidence = {'indicator': 'incidence',
                     'estimate': 150.,
                     'sd': 30.,
                     'year': 2016}  # dictionary for output comparison with fixed keys expected by model runner
 
-# code to start the model running
-model_runner = ModelRunner(country,
-                           input_parameters,
-                           mode,
-                           scenarios_to_run,
-                           param_ranges_unc,
-                           epi_outputs_to_analyse,
-                           uncertainty_accepted_runs,
-                           burn_in,
-                           integration_times,
-                           target_incidence)
+# code to start the model running (not for user interaction)
+model_runner = ModelRunner(country, input_parameters, mode, scenarios_to_run, param_ranges_unc, epi_outputs_to_analyse,
+                           uncertainty_accepted_runs, burn_in, integration_times, target_incidence)
 model_runner.master_runner()
 project = Project(model_runner, plot_start_time)
 project.master_outputs_runner()

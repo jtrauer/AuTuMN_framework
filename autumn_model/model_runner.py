@@ -101,9 +101,9 @@ class ModelRunner:
             # describe model and integrate
             print('Running scenario ' + str(scenario) + ' conditions for ' + self.country +
                   ' using single parameter set')
-            self.model_dict[scenario].make_times(self.integration_times[0],
-                                                 self.integration_times[1],
-                                                 self.integration_times[2])
+            self.model_dict[scenario].make_times(self.integration_times['start'],
+                                                 self.integration_times['finish'],
+                                                 self.integration_times['step'])
             self.model_dict[scenario].integrate(method='explicit')
 
             # find epidemiological model outputs for each scenario
@@ -270,9 +270,9 @@ class ModelRunner:
         for key in param_dict: self.model_dict['uncertainty'].set_param(key, param_dict[key])
         self.is_last_run_success = True
         try:
-            self.model_dict['uncertainty'].make_times(self.integration_times[0],
-                                                      self.integration_times[1],
-                                                      self.integration_times[2])
+            self.model_dict['uncertainty'].make_times(self.integration_times['start'],
+                                                      self.integration_times['finish'],
+                                                      self.integration_times['step'])
             self.model_dict['uncertainty'].integrate()
         except:
             print "Warning: parameters=%s failed with model" % params

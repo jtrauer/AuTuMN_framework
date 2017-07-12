@@ -103,6 +103,26 @@ def scale_axes(vals, max_val, y_sig_figs):
     return labels, axis_modifier
 
 
+def make_default_line_styles(n):
+    """
+    Produces a standard set of line styles that isn't adapted to the data being plotted.
+
+    Args:
+        n: The number of line-styles
+        return_all: Whether to return all of the styles up to n or just the last one
+    Returns:
+        line_styles: A list of standard line-styles, or if return_all is False,
+            then the single item (for methods that are iterating through plots.
+    """
+
+    for i in range(n):
+        line_styles = []
+        for line in ["-", ":", "-.", "--"]:
+            for colour in "krbgmcy":
+                line_styles.append(line + colour)
+    return line_styles
+
+
 class Project:
 
     def __init__(self, model_runner, plot_start_time):
@@ -118,41 +138,19 @@ class Project:
         self.mode = self.model_runner.mode
         self.epi_outputs_to_analyse = self.model_runner.epi_outputs_to_analyse
         self.country = self.model_runner.country
+        self.scenarios = self.model_runner.scenarios_to_run
         self.name = 'test_' + self.country
         self.out_dir_project = os.path.join('projects', self.name)
         if not os.path.isdir(self.out_dir_project):
             os.makedirs(self.out_dir_project)
         self.output_colours = {}
-        self.program_colours = {}
-        self.scenarios = self.model_runner.scenarios_to_run
         self.plot_start_time = plot_start_time
-
         if self.mode == 'manual':
-            self.start_time_index \
-                = tool_kit.find_first_list_element_at_least_value(self.model_runner.epi_outputs[0]['times'], 1990)
+            model = 0
         elif self.mode == 'uncertainty':
-            self.start_time_index \
-                = tool_kit.find_first_list_element_at_least_value(self.model_runner.epi_outputs['uncertainty']['times'],
-                                                                  1990)
-
-    def make_default_line_styles(self, n):
-        """
-        Produces a standard set of line styles that isn't adapted to the data being plotted.
-
-        Args:
-            n: The number of line-styles
-            return_all: Whether to return all of the styles up to n or just the last one
-        Returns:
-            line_styles: A list of standard line-styles, or if return_all is False,
-                then the single item (for methods that are iterating through plots.
-        """
-
-        for i in range(n):
-            line_styles = []
-            for line in ["-", ":", "-.", "--"]:
-                for colour in "krbgmcy":
-                    line_styles.append(line + colour)
-        return line_styles
+            model = 'uncertainty'
+        self.start_time_index \
+            = tool_kit.find_first_list_element_at_least_value(self.model_runner.epi_outputs[model]['times'], 1990)
 
     def save_figure(self, fig, last_part_of_name_for_figure):
         """
@@ -182,10 +180,9 @@ class Project:
         """
 
         # find some general output colours
-        output_colours = self.make_default_line_styles(5)
+        output_colours = make_default_line_styles(5)
         for scenario in self.scenarios:
             self.output_colours[scenario] = output_colours[scenario]
-            self.program_colours[scenario] = output_colours[scenario]
 
         # plot main outputs
         self.plot_epi_outputs(self.epi_outputs_to_analyse)
