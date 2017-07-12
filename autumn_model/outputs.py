@@ -38,7 +38,7 @@ def find_reasonable_year_ticks(start_time, end_time):
     return times
 
 
-def find_standard_output_styles(labels, lightening_factor=1.):
+def find_standard_output_styles(labels):
     """
     Function to find some standardised colours for the outputs we'll typically
     be reporting on - i.e. incidence, prevalence, mortality and notifications.
@@ -50,50 +50,27 @@ def find_standard_output_styles(labels, lightening_factor=1.):
             the colours - with 0. being no additional lightening (black or dark green/red/blue)
             and 1. being completely lightened to reach white.
     Returns:
-        colour: Colour for plotting
         indices: List of strings to be used to find the data in the data object
         yaxis_label: Unit of measurement for outcome
         title: Title for plot (so far usually a subplot)
         patch_colour: Colour half way between colour and white
     """
 
-    colour = []
     indices = []
     yaxis_label = []
     title = []
     patch_colour = []
 
     if 'incidence' in labels:
-        colour += [(lightening_factor, lightening_factor, lightening_factor)]
         indices += ['e_inc_100k']
         yaxis_label += ['Per 100,000 per year']
         title += ['Incidence']
-    if 'mortality' in labels:
-        colour += [(1., lightening_factor, lightening_factor)]
-        indices += ['e_mort_exc_tbhiv_100k']
-        yaxis_label += ['Per 100,000 per year']
-        title += ['Mortality']
     if 'prevalence' in labels:
-        colour += [(lightening_factor, 0.5 + 0.5 * lightening_factor, lightening_factor)]
         indices += ['e_prev_100k']
         yaxis_label += ['Per 100,000']
         title += ['Prevalence']
-    if 'notifications' in labels:
-        colour += [(lightening_factor, lightening_factor, 0.5 + 0.5 * lightening_factor)]
-        yaxis_label += ['']
-        title += ['Notifications']
-    if 'perc_incidence' in labels:
-        colour += [(lightening_factor, lightening_factor, lightening_factor)]
-        yaxis_label += ['Percentage']
-        title += ['Proportion of incidence']
 
-    # create a colour half-way between the line colour and white for patches
-    for i in range(len(colour)):
-        patch_colour += [[]]
-        for j in range(len(colour[i])):
-            patch_colour[i] += [1. - (1. - colour[i][j]) / 2.]
-
-    return colour, indices, yaxis_label, title, patch_colour
+    return indices, yaxis_label, title, patch_colour
 
 
 def scale_axes(vals, max_val, y_sig_figs):
@@ -328,7 +305,7 @@ class Project:
 
         # standard preliminaries
         start_time = 2000
-        colour, indices, yaxis_label, title, patch_colour = find_standard_output_styles(outputs, lightening_factor=0.3)
+        indices, yaxis_label, title, patch_colour = find_standard_output_styles(outputs)
         fig = self.set_and_update_figure()
 
         # loop through indicators
