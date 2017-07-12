@@ -216,7 +216,6 @@ class Project:
         self.program_colours = {}
         self.suptitle_size = 13
         self.grid = False
-        # self.plot_rejected_runs = False
 
         self.scenarios = self.model_runner.scenarios_to_run
         self.gtb_available_outputs = ['incidence', 'prevalence']
@@ -353,15 +352,6 @@ class Project:
         png = os.path.join(self.out_dir_project, self.country + last_part_of_name_for_figure + '.png')
         fig.savefig(png, dpi=300)
 
-    def save_opti_figure(self, fig, last_part_of_name_for_figure):
-
-        """
-        Same as previous method, when applied to optimisation outputs.
-        """
-
-        png = os.path.join(self.model_runner.opti_outputs_dir, self.country + last_part_of_name_for_figure + '.png')
-        fig.savefig(png, dpi=300)
-
     #####################################################
     ### Methods for outputting to Office applications ###
     #####################################################
@@ -415,66 +405,19 @@ class Project:
             # preliminaries
             ax = fig.add_subplot(subplot_grid[0], subplot_grid[1], o + 1)
 
-            # plot scenarios without uncertainty
+            # plotting (manual or uncertainty)
             if self.mode == 'manual':
                 for scenario in self.scenarios[::-1]:  # reversing ensures black baseline plotted over top
                     ax.plot(self.model_runner.epi_outputs[scenario]['times'][self.start_time_index:],
                             self.model_runner.epi_outputs[scenario][output][self.start_time_index:],
                             color=self.output_colours[scenario][1], linestyle=self.output_colours[scenario][0],
                             linewidth=1.5, label='Scenario ' + str(scenario))
-
             elif self.mode == 'uncertainty':
                 for centile in range(3):
                     linewidths = {0: .5, 1: 1.5, 2: .5}
                     ax.plot(self.model_runner.epi_outputs_uncertainty['times'][self.start_time_index:],
                             self.model_runner.epi_outputs_uncertainty_centiles[output][centile][self.start_time_index:],
                             linewidth=linewidths[centile], color='k')
-
-
-            # # plot with uncertainty confidence intervals
-            # elif ci_plot and self.gui_inputs['output_uncertainty']:
-            #     for scenario in self.scenarios[::-1]:
-            #         scenario_name = tool_kit.find_scenario_string_from_number(scenario)
-            #         start_index = self.find_start_index(scenario)
-            #
-            #         # median
-            #         ax.plot(
-            #             self.model_runner.epi_outputs_uncertainty['uncertainty_' + scenario_name][
-            #                 'times'][start_index:],
-            #             self.model_runner.epi_outputs_uncertainty_centiles['uncertainty_' + scenario_name][
-            #                 output][self.model_runner.percentiles.index(50), :][start_index:],
-            #             color=self.output_colours[scenario][1], linestyle=self.output_colours[scenario][0],
-            #             linewidth=1.5, label=tool_kit.capitalise_and_remove_underscore(scenario_name))
-            #
-            #         # upper and lower confidence bounds
-            #         for centile in [2.5, 97.5]:
-            #             ax.plot(
-            #                 self.model_runner.epi_outputs_uncertainty['uncertainty_' + scenario_name]['times'][
-            #                     start_index:],
-            #                 self.model_runner.epi_outputs_uncertainty_centiles['uncertainty_' + scenario_name][output][
-            #                 self.model_runner.percentiles.index(centile), :][start_index:],
-            #                 color=self.output_colours[scenario][1], linestyle='--', linewidth=.5, label=None)
-            #         end_filename = '_ci'
-            #
-            # # plot progressive model run outputs for baseline scenario
-            # elif self.gui_inputs['output_uncertainty']:
-            #     for run in range(len(self.model_runner.epi_outputs_uncertainty['uncertainty_baseline'][output])):
-            #         if run not in self.model_runner.accepted_indices and self.plot_rejected_runs:
-            #             ax.plot(self.model_runner.epi_outputs_uncertainty[
-            #                         'uncertainty_baseline']['times'][self.start_time_index:],
-            #                     self.model_runner.epi_outputs_uncertainty[
-            #                         'uncertainty_baseline'][output][run, self.start_time_index:],
-            #                     linewidth=.2, color='y', label=tool_kit.capitalise_and_remove_underscore('baseline'))
-            #         else:
-            #             ax.plot(self.model_runner.epi_outputs_uncertainty[
-            #                         'uncertainty_baseline']['times'][self.start_time_index:],
-            #                     self.model_runner.epi_outputs_uncertainty[
-            #                         'uncertainty_baseline'][output][run, self.start_time_index:],
-            #                     linewidth=1.2,
-            #                     color=str(1. - float(run) / float(len(
-            #                         self.model_runner.epi_outputs_uncertainty['uncertainty_baseline'][output]))),
-            #                     label=tool_kit.capitalise_and_remove_underscore('baseline'))
-            #         end_filename = '_progress'
 
             self.tidy_axis(ax, subplot_grid, title=title[o], start_time=start_time,
                            legend=(o == len(outputs) - 1 and len(self.scenarios) > 1),
@@ -483,38 +426,6 @@ class Project:
         # add main title and save
         fig.suptitle(self.country + ' model outputs', fontsize=self.suptitle_size)
         self.save_figure(fig, '_gtb')
-
-    def plot_likelihoods(self):
-        """
-        Method to plot likelihoods over runs, differentiating accepted and rejected runs to illustrate progression.
-        """
-
-        # plotting prelims
-        fig = self.set_and_update_figure()
-        ax = fig.add_subplot(1, 1, 1)
-
-        # find accepted likelihoods
-        accepted_log_likelihoods = [self.model_runner.loglikelihoods[i] for i in self.model_runner.accepted_indices]
-
-        # plot the rejected values
-        for i in self.model_runner.rejected_indices:
-
-            # find the index of the last accepted index before the rejected one we're currently interested in
-            last_acceptance_before = [j for j in self.model_runner.accepted_indices if j < i][-1]
-
-            # plot from the previous acceptance to the current rejection
-            ax.plot([last_acceptance_before, i],
-                    [self.model_runner.loglikelihoods[last_acceptance_before],
-                     self.model_runner.loglikelihoods[i]], marker='o', linestyle='--', color='.5')
-
-        # plot the accepted values
-        ax.plot(self.model_runner.accepted_indices, accepted_log_likelihoods, marker='o', color='k')
-
-        # finishing up
-        fig.suptitle('Progression of likelihood', fontsize=self.suptitle_size)
-        ax.set_xlabel('All runs', fontsize=get_nice_font_size([1, 1]), labelpad=1)
-        ax.set_ylabel('Likelihood', fontsize=get_nice_font_size([1, 1]), labelpad=1)
-        self.save_figure(fig, '_likelihoods')
 
     ############################
     ### Miscellaneous method ###
