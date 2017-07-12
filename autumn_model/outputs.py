@@ -46,31 +46,20 @@ def find_standard_output_styles(labels):
 
     Args:
         labels: List containing strings for the outputs that colours are needed for.
-        lightening_factor: Float between zero and one that specifies how much lighter to make
-            the colours - with 0. being no additional lightening (black or dark green/red/blue)
-            and 1. being completely lightened to reach white.
     Returns:
-        indices: List of strings to be used to find the data in the data object
         yaxis_label: Unit of measurement for outcome
         title: Title for plot (so far usually a subplot)
-        patch_colour: Colour half way between colour and white
     """
 
-    indices = []
-    yaxis_label = []
-    title = []
-    patch_colour = []
-
+    yaxis_label = {}
+    title = {}
     if 'incidence' in labels:
-        indices += ['e_inc_100k']
-        yaxis_label += ['Per 100,000 per year']
-        title += ['Incidence']
+        yaxis_label['incidence'] = ['Per 100,000 per year']
+        title['incidence'] = ['Incidence']
     if 'prevalence' in labels:
-        indices += ['e_prev_100k']
-        yaxis_label += ['Per 100,000']
-        title += ['Prevalence']
-
-    return indices, yaxis_label, title, patch_colour
+        yaxis_label['prevalence'] = ['Per 100,000']
+        title['prevalence'] = ['Prevalence']
+    return yaxis_label, title
 
 
 def scale_axes(vals, max_val, y_sig_figs):
@@ -305,7 +294,7 @@ class Project:
 
         # standard preliminaries
         start_time = 2000
-        indices, yaxis_label, title, patch_colour = find_standard_output_styles(outputs)
+        yaxis_label, title = find_standard_output_styles(outputs)
         fig = self.set_and_update_figure()
 
         # loop through indicators
@@ -328,9 +317,9 @@ class Project:
                             self.model_runner.epi_outputs_uncertainty_centiles[output][centile][self.start_time_index:],
                             linewidth=linewidths[centile], color='k')
 
-            self.tidy_axis(ax, title=title[o], start_time=start_time,
+            self.tidy_axis(ax, title=title[output], start_time=start_time,
                            legend=(o == len(outputs) - 1 and len(self.scenarios) > 1),
-                           y_axis_type='raw', y_label=yaxis_label[o])
+                           y_axis_type='raw', y_label=yaxis_label[output])
 
         # add main title and save
         fig.suptitle(self.country + ' model outputs', fontsize=self.suptitle_size)
