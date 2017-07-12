@@ -29,7 +29,6 @@ def find_reasonable_year_ticks(start_time, end_time):
         spacing = 2.
     else:
         spacing = 1.
-
     times = []
     working_time = start_time
     while working_time < end_time:
@@ -54,16 +53,15 @@ def find_standard_output_styles(labels):
     yaxis_label = {}
     title = {}
     if 'incidence' in labels:
-        yaxis_label['incidence'] = ['Per 100,000 per year']
-        title['incidence'] = ['Incidence']
+        yaxis_label['incidence'] = 'Per 100,000 per year'
+        title['incidence'] = 'Incidence'
     if 'prevalence' in labels:
-        yaxis_label['prevalence'] = ['Per 100,000']
-        title['prevalence'] = ['Prevalence']
+        yaxis_label['prevalence'] = 'Per 100,000'
+        title['prevalence'] = 'Prevalence'
     return yaxis_label, title
 
 
 def scale_axes(vals, max_val, y_sig_figs):
-
     """
     General function to scale a set of axes and produce text that can be added to the axis label. Written here as a
     separate function from the tidy_axis method below because it can then be applied to both x- and y-axes.
@@ -102,7 +100,6 @@ def scale_axes(vals, max_val, y_sig_figs):
     else:
         labels = [y_number_format % (v / 1e9) for v in vals]
         axis_modifier = 'Billion '
-
     return labels, axis_modifier
 
 
@@ -125,7 +122,6 @@ class Project:
         self.out_dir_project = os.path.join('projects', self.name)
         if not os.path.isdir(self.out_dir_project):
             os.makedirs(self.out_dir_project)
-        self.figure_number = 1
         self.output_colours = {}
         self.program_colours = {}
         self.suptitle_size = 13
@@ -140,22 +136,7 @@ class Project:
                 = tool_kit.find_first_list_element_at_least_value(self.model_runner.epi_outputs['uncertainty']['times'],
                                                                   1990)
 
-    #################################
-    # General methods for use below #
-    #################################
-
-    def set_and_update_figure(self):
-        """
-        If called at the start of each plotting function, will create a figure that is numbered according to
-        self.figure_number, which is then updated at each call. This stops figures plotting on the same axis
-        and saves you having to worry about how many figures are being opened.
-        """
-
-        fig = pyplot.figure(self.figure_number)
-        self.figure_number += 1
-        return fig
-
-    def make_default_line_styles(self, n, return_all=True):
+    def make_default_line_styles(self, n):
         """
         Produces a standard set of line styles that isn't adapted to the data being plotted.
 
@@ -167,17 +148,12 @@ class Project:
                 then the single item (for methods that are iterating through plots.
         """
 
-        # iterate through a standard set of line styles
         for i in range(n):
             line_styles = []
             for line in ["-", ":", "-.", "--"]:
                 for colour in "krbgmcy":
                     line_styles.append(line + colour)
-
-        if return_all:
-            return line_styles
-        else:
-            return line_styles[n - 1]
+        return line_styles
 
     def tidy_axis(self, ax, title='', start_time=0., legend=False, x_label='', y_label='',
                   x_axis_type='time', y_axis_type='scaled', x_sig_figs=0, y_sig_figs=0):
@@ -251,23 +227,15 @@ class Project:
         png = os.path.join(self.out_dir_project, self.country + last_part_of_name_for_figure + '.png')
         fig.savefig(png, dpi=300)
 
-    #####################################################
-    ### Methods for outputting to Office applications ###
-    #####################################################+
-
     def master_outputs_runner(self):
         """
-        Method to work through all the fundamental output methods, which then call all the specific output
-        methods for plotting and writing as required.
+        Method to work through all the fundamental output methods, which here call only the methods relevant to plotting
+        as an example.
         """
 
         # master plotting method
         self.run_plotting()
         self.open_output_directory()
-
-    ########################
-    ### Plotting methods ###
-    ########################
 
     def run_plotting(self):
         """
@@ -275,7 +243,7 @@ class Project:
         """
 
         # find some general output colours
-        output_colours = self.make_default_line_styles(5, True)
+        output_colours = self.make_default_line_styles(5)
         for scenario in self.scenarios:
             self.output_colours[scenario] = output_colours[scenario]
             self.program_colours[scenario] = output_colours[scenario]
@@ -295,7 +263,7 @@ class Project:
         # standard preliminaries
         start_time = 2000
         yaxis_label, title = find_standard_output_styles(outputs)
-        fig = self.set_and_update_figure()
+        fig = pyplot.figure(1)
 
         # loop through indicators
         for o, output in enumerate(outputs[1:]):
