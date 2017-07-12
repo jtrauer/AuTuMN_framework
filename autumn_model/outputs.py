@@ -192,7 +192,7 @@ def scale_axes(vals, max_val, y_sig_figs):
 
 class Project:
 
-    def __init__(self, model_runner, epi_outputs_to_analyse=[]):
+    def __init__(self, model_runner, mode='manual', epi_outputs_to_analyse=[]):
         """
         Initialises an object of class Project, that will contain all the information (data + outputs) for writing a
         report for a country.
@@ -202,6 +202,7 @@ class Project:
         """
 
         self.epi_outputs_to_analyse = epi_outputs_to_analyse
+        self.mode = mode
 
         self.model_runner = model_runner
         # self.inputs = self.model_runner.inputs

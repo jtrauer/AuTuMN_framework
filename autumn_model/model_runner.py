@@ -50,6 +50,8 @@ class ModelRunner:
         self.epi_outputs_to_analyse = epi_outputs_to_analyse
         self.uncertainty_accepted_runs = uncertainty_accepted_runs
 
+        self.accepted_indices = []
+
         self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run, self.fixed_parameters)
         self.inputs.read_and_load_data()
 
@@ -226,6 +228,7 @@ class ModelRunner:
                     # update likelihood and parameter set for next run
                     prev_log_likelihood = log_likelihood
                     params = new_param_list
+                    self.accepted_indices += [run]
 
                 run += 1
 

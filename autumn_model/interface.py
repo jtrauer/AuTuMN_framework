@@ -41,7 +41,7 @@ param_ranges_unc = [{'name': 'tb_n_contact',
                      'upper_bound': .5 / 3.,
                      'search_width': .1 / 3.,
                      'distribution': 'beta'}]
-uncertainty_accepted_runs = 100
+uncertainty_accepted_runs = 5
 
 # code to start the model running
 model_runner = ModelRunner(country,
@@ -52,5 +52,5 @@ model_runner = ModelRunner(country,
                            epi_outputs_to_analyse,
                            uncertainty_accepted_runs)
 model_runner.master_runner()
-project = Project(model_runner, epi_outputs_to_analyse)
+project = Project(model_runner, mode, epi_outputs_to_analyse)
 project.master_outputs_runner()
