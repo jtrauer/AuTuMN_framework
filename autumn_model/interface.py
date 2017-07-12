@@ -3,6 +3,11 @@ from model_runner import ModelRunner
 from outputs import Project
 
 
+mode = 'manual'
+# mode = 'uncertainty'
+
+
+
 time_early_treatment = 1. / 52.
 time_late_treatment = .5 - time_early_treatment
 fixed_parameters = {
@@ -23,7 +28,7 @@ fixed_parameters = {
     'int_vaccine_efficacy': .5
 }
 model_runner \
-    = ModelRunner(country='India', fixed_parameters=fixed_parameters, mode='uncertainty', scenarios_to_run=[0, 1, 2])
+    = ModelRunner(country='India', fixed_parameters=fixed_parameters, mode=mode, scenarios_to_run=[0, 1, 2])
 model_runner.master_runner()
 project = Project(model_runner)
 project.master_outputs_runner()
