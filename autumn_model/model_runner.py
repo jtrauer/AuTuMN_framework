@@ -44,6 +44,7 @@ class ModelRunner:
             mode: Whether scenario or uncertainty being run, set to either 'manual' or 'uncertainty'
         """
 
+        # convert object arguments to attributes
         self.country = country
         self.fixed_parameters = fixed_parameters
         self.mode = mode
@@ -55,21 +56,21 @@ class ModelRunner:
         self.integration_times = integration_times
         self.target = target
 
-
-        self.accepted_indices = []
-
+        # inputs obtained from spreadsheet reading and data processing
         self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run, self.fixed_parameters)
         self.inputs.read_and_load_data()
 
-        # preparing for model runs
+        # dictionary for storing models
         self.model_dict = {}
-
-        # uncertainty-related attributes
-        self.is_last_run_success = True
 
         # output-related attributes
         self.epi_outputs = {}
         self.epi_outputs_uncertainty = []
+        self.epi_outputs_uncertainty_centiles = {}
+
+        # uncertainty-related attributes
+        self.accepted_indices = []
+        self.is_last_run_success = True
 
     ###############################################
     ### Master methods to run all other methods ###
@@ -84,7 +85,7 @@ class ModelRunner:
             self.run_manual_calibration()
         elif self.mode == 'uncertainty':
             self.run_uncertainty()
-            self.epi_outputs_uncertainty_centiles = self.find_uncertainty_centiles(self.epi_outputs_uncertainty)
+            self.epi_outputs_uncertainty_centiles = self.find_uncertainty_centiles()
 
     def run_manual_calibration(self):
         """
@@ -105,9 +106,8 @@ class ModelRunner:
                                                  self.integration_times[2])
             self.model_dict[scenario].integrate(method='explicit')
 
-            # model interpretation for each scenario
-            self.epi_outputs[scenario] \
-                = self.find_epi_outputs(scenario)
+            # find epidemiological model outputs for each scenario
+            self.epi_outputs[scenario] = self.find_epi_outputs(scenario)
 
     ####################################
     ### Model interpretation methods ###
@@ -164,7 +164,7 @@ class ModelRunner:
 
         return epi_outputs
 
-    def find_uncertainty_centiles(self, full_uncertainty_outputs):
+    def find_uncertainty_centiles(self):
         """
         Find percentiles from uncertainty dictionaries.
         """
@@ -173,7 +173,7 @@ class ModelRunner:
         uncertainty_centiles = {}
         for output in self.epi_outputs_to_analyse:
             uncertainty_centiles[output] \
-                = numpy.percentile(full_uncertainty_outputs[output][accepted_no_burn_in_indices, :],
+                = numpy.percentile(self.epi_outputs_uncertainty[output][accepted_no_burn_in_indices, :],
                                    [2.5, 50., 97.5], axis=0)
         return uncertainty_centiles
 
@@ -286,35 +286,8 @@ class ModelRunner:
         """
 
         param_dict = {}
-        for i in range(len(self.param_ranges_unc)):
-            param_dict[self.param_ranges_unc[i]['name']] = params[i]
+        for i in range(len(self.param_ranges_unc)): param_dict[self.param_ranges_unc[i]['name']] = params[i]
         return param_dict
-
-    def get_fitting_data(self, ):
-        """
-        Define the characteristics (mean and standard deviation) of the normal distribution for model outputs
-        (incidence, mortality).
-
-        Returns:
-            normal_char: Dictionary with keys outputs and values dictionaries. Sub-dictionaries have keys years
-                and values lists, with first element of list means and second standard deviations.
-        """
-
-        # dictionary storing the characteristics of the normal distributions
-        normal_char = {}
-        for output_dict in self.inputs.outputs_unc:
-            normal_char[output_dict['key']] = {}
-
-            # incidence
-            if output_dict['key'] == 'incidence':
-                for year in self.inputs.data_to_fit[output_dict['key']].keys():
-                    low = self.inputs.data_to_fit['incidence_low'][year]
-                    high = self.inputs.data_to_fit['incidence_high'][year]
-                    sd = output_dict['width_multiplier'] * (high - low) / (2. * 1.96)
-                    mu = (high + low) / 2.
-                    normal_char[output_dict['key']][year] = [mu, sd]
-
-        return normal_char
 
     def update_params(self, old_params):
         """

@@ -36,7 +36,10 @@ param_ranges_unc = [{'name': 'tb_n_contact',
 uncertainty_accepted_runs = 4  # how many accepted runs needed before uncertainty analysis finishes (including burn-in)
 burn_in = 2  # number of runs to discard (both accepted and rejected)
 integration_times = [1850, 2035, .05]  # must contain three-element list of 0: start time, 1: end time, 2: time step
-target_incidence = {'indicator': 'incidence', 'estimate': 150., 'sd': 30., 'year': 2016}
+target_incidence = {'indicator': 'incidence',
+                    'estimate': 150.,
+                    'sd': 30.,
+                    'year': 2016}  # dictionary for output comparison with fixed keys expected by model runner
 
 # code to start the model running
 model_runner = ModelRunner(country,
