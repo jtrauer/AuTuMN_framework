@@ -5,31 +5,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), os.pardir))
 sys.path.append('C:/Users/James/Desktop/popdynamics/popdynamics/')
 from basepop import BaseModel
 
-"""
-This file presents a transmission dynamic model for TB based on those most commonly used by the AuTuMN team
-See http://www.tb-modelling.com/home/index.php for more information on AuTuMN.
-
-Similar to seir_model.py, it uses methods from the BaseModel class in the basepop.py file from this module
-(one directory above) to create the model objects for two similar TB transmission dynamic models.
-
-It advances upon the seir_model.py examples by incorporating time-variant functions used to represent changes in
-the programmatic response to TB over time, so that their epidemiological impact on the endemic burden can be
-illustrated.
-
-The first section of this code (to line 96) presents static functions for use in the master execution below.
-
-The second section of the code (from line 99 to line 241) presents the creation of the two TB model classes, first with
-varying case detection rate and second also adding the intervention of BCG vaccination.
-
-The last section of the code (from line 244 to the end of the script) presents the execution of the example models and
-calls the functions to graph their outputs.
-
-Suggestion to get started:
-- Adjust some parameters within parameter values set in model object instantiation and observe how model outputs change.
-- Try adding another intervention in a similar way to that presented for BCG vaccination (e.g. treatment of LTBI,
- active case finding).
-"""
-
 
 ########################################################
 ### Static functions for graphing and managing files ###

@@ -5,32 +5,6 @@ import platform
 import os
 
 
-def find_smallest_factors_of_integer(n):
-    """
-    Quick method to iterate through integers to find the smallest whole number fractions.
-    Written only to be called by find_subplot_numbers.
-
-    Args:
-        n: Integer to be factorised
-    Returns:
-        answer: The two smallest factors of the integer
-    """
-
-    answer = [1e3, 1e3]
-    for i in range(1, n + 1):
-        if n % i == 0 and i+(n/i) < sum(answer):
-            answer = [i, n/i]
-    return answer
-
-
-def get_nice_font_size(subplot_grid):
-    """
-    Simple function to return a reasonable font size as appropriate to the number of rows of subplots in the figure.
-    """
-
-    return 2. + 8. / subplot_grid[0]
-
-
 def find_reasonable_year_ticks(start_time, end_time):
     """
     Function to find a reasonable spacing between years for x-ticks.
@@ -122,30 +96,6 @@ def find_standard_output_styles(labels, lightening_factor=1.):
     return colour, indices, yaxis_label, title, patch_colour
 
 
-def find_subplot_numbers(n):
-
-    """
-    Method to find a good number of rows and columns for subplots of figure.
-
-    Args:
-        n: Total number of subplots.
-    Returns:
-        answer: List of two elements, being the rows and columns of the subplots.
-
-    """
-
-    # Find a nice number of subplots for a panel plot
-    answer = find_smallest_factors_of_integer(n)
-    i = 0
-    while i < 10:
-        if abs(answer[0] - answer[1]) > 3:
-            n = n + 1
-            answer = find_smallest_factors_of_integer(n)
-        i = i + 1
-
-    return answer
-
-
 def scale_axes(vals, max_val, y_sig_figs):
 
     """
@@ -192,20 +142,18 @@ def scale_axes(vals, max_val, y_sig_figs):
 
 class Project:
 
-    def __init__(self, model_runner, mode='manual', epi_outputs_to_analyse=[]):
+    def __init__(self, model_runner):
         """
         Initialises an object of class Project, that will contain all the information (data + outputs) for writing a
         report for a country.
 
         Args:
-            models: dictionary such as: models = {'baseline': model, 'scenario_1': model_1,  ...}
+            model_runner: The entire model runner object that was responsible for coordinating all model runs
         """
 
-        self.epi_outputs_to_analyse = epi_outputs_to_analyse
-        self.mode = mode
-
         self.model_runner = model_runner
-        # self.inputs = self.model_runner.inputs
+        self.mode = self.model_runner.mode
+        self.epi_outputs_to_analyse = self.model_runner.epi_outputs_to_analyse
         self.country = self.model_runner.country
         self.name = 'test_' + self.country
         self.out_dir_project = os.path.join('projects', self.name)
@@ -216,12 +164,8 @@ class Project:
         self.program_colours = {}
         self.suptitle_size = 13
         self.grid = False
-
         self.scenarios = self.model_runner.scenarios_to_run
-        self.gtb_available_outputs = ['incidence', 'prevalence']
-        # self.level_conversion_dict = {'lower_limit': '_lo', 'upper_limit': '_hi', 'point_estimate': ''}
-        #
-        # comes up so often that we need to find this index, that best to do once in instantiation
+
         if self.mode == 'manual':
             self.start_time_index \
                 = tool_kit.find_first_list_element_at_least_value(self.model_runner.epi_outputs[0]['times'], 1990)
@@ -244,17 +188,6 @@ class Project:
         fig = pyplot.figure(self.figure_number)
         self.figure_number += 1
         return fig
-
-    def make_single_axis(self, fig):
-        """
-        Create axes for a figure with a single plot with a reasonable amount of space around.
-
-        Returns:
-            ax: The axes that can be plotted on
-        """
-
-        ax = fig.add_axes([0.1, 0.1, 0.6, 0.75])
-        return ax
 
     def make_default_line_styles(self, n, return_all=True):
         """
@@ -287,13 +220,13 @@ class Project:
         """
 
         # add the sub-plot title with slightly larger titles than the rest of the text on the panel
-        if title: ax.set_title(title, fontsize=get_nice_font_size(subplot_grid) + 2.)
+        if title: ax.set_title(title, fontsize=12.)
 
         # add a legend if needed
         if legend == 'for_single':
             ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0., frameon=False, prop={'size': 7})
         elif legend:
-            ax.legend(fontsize=get_nice_font_size(subplot_grid), frameon=False)
+            ax.legend(fontsize=10., frameon=False)
 
         # sort x-axis
         if x_axis_type == 'time':
@@ -304,9 +237,9 @@ class Project:
             max_val = max([abs(v) for v in vals])
             labels, axis_modifier = scale_axes(vals, max_val, x_sig_figs)
             ax.set_xticklabels(labels)
-            ax.set_xlabel(x_label + axis_modifier, fontsize=get_nice_font_size(subplot_grid), labelpad=1)
+            ax.set_xlabel(x_label + axis_modifier, fontsize=10., labelpad=1)
         elif x_axis_type == 'proportion':
-            ax.set_xlabel(x_label, fontsize=get_nice_font_size(subplot_grid), labelpad=1)
+            ax.set_xlabel(x_label, fontsize=10., labelpad=1)
             ax.set_xlim((0., 1.))
         elif x_axis_type == 'individual_years':
             ax.set_xlim((start_time, self.inputs.model_constants['plot_end_time']))
@@ -314,7 +247,7 @@ class Project:
             for tick in ax.xaxis.get_major_ticks():
                 tick.label.set_rotation(45)
         else:
-            ax.set_xlabel(x_label, fontsize=get_nice_font_size(subplot_grid), labelpad=1)
+            ax.set_xlabel(x_label, fontsize=10., labelpad=1)
 
         # sort y-axis
         ax.set_ylim(bottom=0.)
@@ -326,18 +259,18 @@ class Project:
         elif y_axis_type == 'scaled':
             labels, axis_modifier = scale_axes(vals, max_val, y_sig_figs)
             ax.set_yticklabels(labels)
-            ax.set_ylabel(axis_modifier + y_label, fontsize=get_nice_font_size(subplot_grid), labelpad=1)
+            ax.set_ylabel(axis_modifier + y_label, fontsize=10., labelpad=1)
         elif y_axis_type == 'proportion':
             ax.set_ylim(top=1.)
-            ax.set_ylabel(y_label, fontsize=get_nice_font_size(subplot_grid), labelpad=1)
+            ax.set_ylabel(y_label, fontsize=10., labelpad=1)
         else:
             ax.set_ylim(top=max_val * 1.1)
-            ax.set_ylabel(y_label, fontsize=get_nice_font_size(subplot_grid), labelpad=1)
+            ax.set_ylabel(y_label, fontsize=10., labelpad=1)
 
         # set size of font for x-ticks and add a grid if requested
         for axis_to_change in [ax.xaxis, ax.yaxis]:
             for tick in axis_to_change.get_major_ticks():
-                tick.label.set_fontsize(get_nice_font_size(subplot_grid))
+                tick.label.set_fontsize(10.)
             axis_to_change.grid(self.grid)
 
     def save_figure(self, fig, last_part_of_name_for_figure):
@@ -354,7 +287,7 @@ class Project:
 
     #####################################################
     ### Methods for outputting to Office applications ###
-    #####################################################
+    #####################################################+
 
     def master_outputs_runner(self):
         """
@@ -382,9 +315,9 @@ class Project:
             self.program_colours[scenario] = output_colours[scenario]
 
         # plot main outputs
-        self.plot_epi_outputs(self.epi_outputs_to_analyse, ci_plot=None)
+        self.plot_epi_outputs(self.epi_outputs_to_analyse)
 
-    def plot_epi_outputs(self, outputs, ci_plot=None):
+    def plot_epi_outputs(self, outputs):
         """
         Produces the plot for the main outputs, loops over multiple scenarios.
 
@@ -396,7 +329,7 @@ class Project:
         # standard preliminaries
         start_time = 2000
         colour, indices, yaxis_label, title, patch_colour = find_standard_output_styles(outputs, lightening_factor=0.3)
-        subplot_grid = find_subplot_numbers(len(outputs) - 1)
+        subplot_grid = [1, len(outputs) - 1]
         fig = self.set_and_update_figure()
 
         # loop through indicators

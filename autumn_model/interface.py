@@ -3,7 +3,7 @@ from model_runner import ModelRunner
 from outputs import Project
 
 # user inputs (which could be moved to a GUI as required)
-mode = 'uncertainty'  # in AuTuMN_framework, must be either 'manual' or 'uncertainty'
+mode = 'manual'  # in AuTuMN_framework, must be either 'manual' or 'uncertainty'
 country = 'India'  # must accord with the country string used in the Global TB Report
 scenarios_to_run = [0, 1, 2]  # scenarios to be run
 epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']  # epidemiological outputs to be assessed
@@ -53,5 +53,5 @@ model_runner = ModelRunner(country,
                            integration_times,
                            target_incidence)
 model_runner.master_runner()
-project = Project(model_runner, mode, epi_outputs_to_analyse)
+project = Project(model_runner)
 project.master_outputs_runner()
