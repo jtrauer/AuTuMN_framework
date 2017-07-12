@@ -8,8 +8,9 @@ by the remainder of the platform. As all the user interaction can occur through 
 can be constructed out of the code contained here.
 """
 
-# user inputs
-mode = 'manual'  # must be either 'manual' or 'uncertainty'
+# user inputs __________________________________________________________________________________________________________
+
+mode = 'uncertainty'  # must be either 'manual' or 'uncertainty'
 country = 'India'  # must accord with the country string used in the Global TB Report
 scenarios_to_run = [0, 1, 2]  # scenarios to be run
 epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']  # epidemiological outputs to be assessed
@@ -31,9 +32,8 @@ input_parameters = {'demo_rate_birth': 20. / 1e3,
                     'int_vaccine_efficacy': .5,
                     'time_early_treatment': 1. / 52.,
                     'time_treatment': .5}  # fixed value input parameters for the model (some needed further processing)
-
-# dictionary of uncertainty parameters, with standardised keys
-# to add more parameters, add another list element with the same set of keys
+# param_ranges_unc is a dictionary of uncertainty parameters, with standardised keys. To add more parameters,
+# add another list element with the same set of keys as the following:
 param_ranges_unc = [{'name': 'tb_n_contact',
                      'start': 25.,
                      'lower_bound': 0.,
@@ -50,7 +50,8 @@ target_incidence = {'indicator': 'incidence',
                     'sd': 30.,
                     'year': 2016}  # dictionary for output comparison with fixed keys expected by model runner
 
-# code to start the model running (not for user interaction)
+# code to start the model running (not for user interaction)____________________________________________________________
+
 model_runner = ModelRunner(country, input_parameters, mode, scenarios_to_run, param_ranges_unc, epi_outputs_to_analyse,
                            uncertainty_accepted_runs, burn_in, integration_times, target_incidence)
 model_runner.master_runner()
