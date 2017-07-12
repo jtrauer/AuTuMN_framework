@@ -184,14 +184,11 @@ class ModelRunner:
         Main method to run all the uncertainty processes.
         """
 
-        print('Uncertainty analysis commenced')
-
         # prepare for uncertainty loop
+        print('Uncertainty analysis commenced')
         n_accepted = 0
         prev_log_likelihood = -1e10
         run = 0
-
-        # instantiate uncertainty model object for baseline scenario
         self.model_dict['uncertainty'] = tb_model.SimpleTbModel(self.fixed_parameters, self.inputs, 0)
 
         # get initial set of parameters
@@ -206,71 +203,80 @@ class ModelRunner:
             # run baseline integration (includes parameter checking, parameter setting and recording success/failure)
             self.run_with_params(new_param_list)
 
-            # store regardless of acceptance, provided run was completed successfully
+            # store regardless of acceptance (provided run was completed successfully)
             if self.is_last_run_success:
 
-                # get outputs for calibration and store results
+                # get uncertainty outputs and store results
                 self.store_uncertainty()
 
                 # calculate prior
                 prior_log_likelihood = 0.
                 for i in range(len(self.param_ranges_unc)):
                     param_val = new_param_list[i]
-
-                    # calculate the density of param_val
                     bound_low, bound_high \
                         = self.param_ranges_unc[i]['lower_bound'], self.param_ranges_unc[i]['upper_bound']
 
-                    # normalise value and find log of PDF from appropriate distribution
+                    # normalise and find log PDF from appropriate distribution
                     if self.param_ranges_unc[i]['distribution'] == 'beta':
                         prior_log_likelihood += beta.logpdf((param_val - bound_low) / (bound_high - bound_low), 2., 2.)
                     elif self.param_ranges_unc[i]['distribution'] == 'uniform':
                         prior_log_likelihood += numpy.log(1. / (bound_high - bound_low))
 
                 # calculate posterior
-                inc_result \
-                    = self.epi_outputs['uncertainty'][self.target['indicator']][
+                result = self.epi_outputs['uncertainty'][self.target['indicator']][
                     self.find_time_index(self.target['year'], 'uncertainty')]
-                posterior_log_likelihood = norm.logpdf(inc_result, self.target['estimate'], self.target['sd'])
+                posterior_log_likelihood = norm.logpdf(result, self.target['estimate'], self.target['sd'])
 
                 # determine acceptance
                 log_likelihood = prior_log_likelihood + posterior_log_likelihood
                 accepted = numpy.random.binomial(n=1, p=min(1., numpy.exp(log_likelihood - prev_log_likelihood)))
 
+                # update likelihood, parameters and record acceptance for next run
                 if bool(accepted):
                     n_accepted += 1
-
-                    # update likelihood and parameter set for next run
                     prev_log_likelihood = log_likelihood
                     params = new_param_list
                     self.accepted_indices += [run]
 
+                # update run number
                 run += 1
 
+                # report on progress
                 print('run')
                 print(run)
                 print('accepted')
                 print(accepted)
                 print('incidence')
-                print(inc_result)
+                print(result)
                 for i in range(len(self.param_ranges_unc)):
                     print(self.param_ranges_unc[i]['name'])
                     print(new_param_list[i])
                 print('\n')
 
+            # obtain a new parameter list for the next run
             new_param_list = self.update_params(params)
 
-    def set_model_with_params(self, param_dict):
+    def run_with_params(self, params):
         """
-        Populates baseline model with params from uncertainty calculations.
+        Integrate the model with the proposed parameter set.
 
         Args:
-            param_dict: Dictionary of the parameters to be set within the model (keys parameter name strings and values
-                parameter values).
+            params: The parameters to be set in the model.
         """
 
-        for key in param_dict:
-            self.model_dict['uncertainty'].set_param(key, param_dict[key])
+        param_dict = self.convert_param_list_to_dict(params)
+
+        # set parameters and run
+        for key in param_dict: self.model_dict['uncertainty'].set_param(key, param_dict[key])
+        self.is_last_run_success = True
+        try:
+            self.model_dict['uncertainty'].make_times(self.integration_times[0],
+                                                      self.integration_times[1],
+                                                      self.integration_times[2])
+            self.model_dict['uncertainty'].integrate()
+        except:
+            print "Warning: parameters=%s failed with model" % params
+            self.is_last_run_success = False
 
     def convert_param_list_to_dict(self, params):
         """
@@ -314,28 +320,6 @@ class ModelRunner:
 
         return new_params
 
-    def run_with_params(self, params):
-        """
-        Integrate the model with the proposed parameter set.
-
-        Args:
-            params: The parameters to be set in the model.
-        """
-
-        param_dict = self.convert_param_list_to_dict(params)
-
-        # set parameters and run
-        self.set_model_with_params(param_dict)
-        self.is_last_run_success = True
-        try:
-            self.model_dict['uncertainty'].make_times(self.integration_times[0],
-                                                      self.integration_times[1],
-                                                      self.integration_times[2])
-            self.model_dict['uncertainty'].integrate()
-        except:
-            print "Warning: parameters=%s failed with model" % params
-            self.is_last_run_success = False
-
     def store_uncertainty(self):
         """
         Add model results from one uncertainty run to the appropriate outputs dictionary, vertically stacking
@@ -370,7 +354,4 @@ class ModelRunner:
 
         return [i for i, j in enumerate(self.model_dict[scenario].times) if j >= time][0] - 1
         raise ValueError('Time not found')
-
-
-
 
