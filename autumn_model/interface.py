@@ -10,7 +10,7 @@ can be constructed out of the code contained here.
 
 # user inputs __________________________________________________________________________________________________________
 
-mode = 'uncertainty'  # must be either 'manual' or 'uncertainty'
+mode = 'manual'  # must be either 'manual' or 'uncertainty'
 country = 'India'  # must accord with the country string used in the Global TB Report
 scenarios_to_run = [0, 1, 2]  # scenarios to be run
 epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']  # epidemiological outputs to be assessed
