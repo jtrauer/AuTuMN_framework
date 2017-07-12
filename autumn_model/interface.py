@@ -2,9 +2,14 @@
 from model_runner import ModelRunner
 from outputs import Project
 
+# user inputs (which could be moved to a GUI as required)
 
-mode = 'manual'
-# mode = 'uncertainty'
+# mode = 'manual'
+mode = 'uncertainty'
+
+country = 'India'
+
+scenarios_to_run = [0, 1, 2]
 
 input_parameters = {
     'demo_rate_birth': 20. / 1e3,
@@ -25,8 +30,21 @@ input_parameters = {
     'time_early_treatment': 1. / 52.,
     'time_treatment': .5
 }
-model_runner \
-    = ModelRunner(country='India', fixed_parameters=input_parameters, mode=mode, scenarios_to_run=[0, 1, 2])
+
+# dictionary of uncertainty parameters, with standard keys
+param_ranges_unc = [{'name': 'tb_n_contact',
+                     'start': 25.,
+                     'lower_bound': 0.,
+                     'upper_bound': 50.,
+                     'search_width': 5.,
+                     'distribution': 'beta'}]
+
+# runnning
+model_runner = ModelRunner(country=country,
+                           fixed_parameters=input_parameters,
+                           mode=mode,
+                           scenarios_to_run=scenarios_to_run,
+                           param_ranges_unc=param_ranges_unc)
 model_runner.master_runner()
 project = Project(model_runner)
 project.master_outputs_runner()

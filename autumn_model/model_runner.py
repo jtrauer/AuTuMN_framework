@@ -31,7 +31,7 @@ def elementwise_list_addition(increment, list_to_increment):
 
 class ModelRunner:
 
-    def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0]):
+    def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0], param_ranges_unc=[]):
         """
         Instantiation method for model runner.
 
@@ -43,40 +43,23 @@ class ModelRunner:
 
         self.country = country
         self.fixed_parameters = fixed_parameters
-        # self.time_variant_parameters = time_variant_parameters
         self.mode = mode
         self.scenarios_to_run = scenarios_to_run
+        self.param_ranges_unc = param_ranges_unc
 
         self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run, self.fixed_parameters)
         self.inputs.read_and_load_data()
 
-        # loading of inputs
-        # self.inputs.read_and_load_data()
-
-        # preparing for basic runs
+        # preparing for model runs
         self.model_dict = {}
 
-        # Uncertainty-related attributes
-        # self.is_last_run_success = False
-        # self.loglikelihoods = []
-        # self.whether_accepted_list = []
-        # self.solns_for_extraction = ['compartment_soln', 'fraction_soln']
-        # self.arrays_for_extraction = ['flow_array', 'fraction_array', 'soln_array', 'var_array', 'costs']
-        # self.acceptance_dict = {}
-        # self.rejection_dict = {}
-        #
+        # uncertainty-related attributes
+        self.is_last_run_success = True
+
         # output-related attributes
         self.epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']
         self.epi_outputs = {}
         self.epi_outputs_uncertainty = []
-
-        # dictionary of uncertainty parameters, with standard keys
-        self.param_ranges_unc = [{'name': 'tb_n_contact',
-                                  'start': 25.,
-                                  'lower_bound': 0.,
-                                  'upper_bound': 50.,
-                                  'search_width': 5.,
-                                  'distribution': 'beta'}]
 
     ###############################################
     ### Master methods to run all other methods ###
