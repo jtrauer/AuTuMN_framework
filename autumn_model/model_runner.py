@@ -32,7 +32,7 @@ def elementwise_list_addition(increment, list_to_increment):
 class ModelRunner:
 
     def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0], param_ranges_unc=[],
-                 epi_outputs_to_analyse=[]):
+                 epi_outputs_to_analyse=[], uncertainty_accepted_runs=100):
         """
         Instantiation method for model runner.
 
@@ -48,6 +48,7 @@ class ModelRunner:
         self.scenarios_to_run = scenarios_to_run
         self.param_ranges_unc = param_ranges_unc
         self.epi_outputs_to_analyse = epi_outputs_to_analyse
+        self.uncertainty_accepted_runs = uncertainty_accepted_runs
 
         self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run, self.fixed_parameters)
         self.inputs.read_and_load_data()
@@ -174,8 +175,7 @@ class ModelRunner:
 
         # until a sufficient number of parameters are accepted
         run = 0
-        uncertainty_runs = 20
-        while n_accepted < uncertainty_runs:
+        while n_accepted < self.uncertainty_accepted_runs:
 
             # if we are using the first parameter set
             if run == 0:
@@ -242,6 +242,8 @@ class ModelRunner:
                 print(incidence_result)
                 print('beta')
                 print(new_param_list[0])
+                print('death')
+                print(new_param_list[1])
                 print('\n')
 
     def set_model_with_params(self, param_dict):
