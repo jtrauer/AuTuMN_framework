@@ -192,7 +192,7 @@ def scale_axes(vals, max_val, y_sig_figs):
 
 class Project:
 
-    def __init__(self, model_runner):
+    def __init__(self, model_runner, epi_outputs_to_analyse):
         """
         Initialises an object of class Project, that will contain all the information (data + outputs) for writing a
         report for a country.
@@ -200,6 +200,8 @@ class Project:
         Args:
             models: dictionary such as: models = {'baseline': model, 'scenario_1': model_1,  ...}
         """
+
+        self.epi_outputs_to_analyse = epi_outputs_to_analyse
 
         self.model_runner = model_runner
         # self.inputs = self.model_runner.inputs
@@ -382,18 +384,11 @@ class Project:
         for scenario in self.scenarios:
             self.output_colours[scenario] = output_colours[scenario]
             self.program_colours[scenario] = output_colours[scenario]
-            # for p, program in enumerate(self.programs[scenario]):
-            #     # +1 is to avoid starting from black, which doesn't look as nice for programs as for baseline scenario
-            #     self.program_colours[scenario][program] = output_colours[p + 1]
 
         # plot main outputs
-        self.plot_outputs_against_gtb(self.gtb_available_outputs, ci_plot=None)
+        self.plot_epi_outputs(self.epi_outputs_to_analyse, ci_plot=None)
 
-        # # plot likelihood estimates
-        # if self.gui_inputs['output_likelihood_plot']:
-        #     self.plot_likelihoods()
-
-    def plot_outputs_against_gtb(self, outputs, ci_plot=None):
+    def plot_epi_outputs(self, outputs, ci_plot=None):
         """
         Produces the plot for the main outputs, loops over multiple scenarios.
 
@@ -405,16 +400,14 @@ class Project:
         # standard preliminaries
         start_time = 2000
         colour, indices, yaxis_label, title, patch_colour = find_standard_output_styles(outputs, lightening_factor=0.3)
-        subplot_grid = find_subplot_numbers(len(outputs))
+        subplot_grid = find_subplot_numbers(len(outputs) - 1)
         fig = self.set_and_update_figure()
 
         # loop through indicators
-        for o, output in enumerate(outputs):
+        for o, output in enumerate(outputs[1:]):
 
             # preliminaries
             ax = fig.add_subplot(subplot_grid[0], subplot_grid[1], o + 1)
-
-            # plotting modelled data____________________________________________________________________________________
 
             # plot scenarios without uncertainty
             if ci_plot is None:

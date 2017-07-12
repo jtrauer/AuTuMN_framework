@@ -31,7 +31,8 @@ def elementwise_list_addition(increment, list_to_increment):
 
 class ModelRunner:
 
-    def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0], param_ranges_unc=[]):
+    def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0], param_ranges_unc=[],
+                 epi_outputs_to_analyse=[]):
         """
         Instantiation method for model runner.
 
@@ -46,6 +47,7 @@ class ModelRunner:
         self.mode = mode
         self.scenarios_to_run = scenarios_to_run
         self.param_ranges_unc = param_ranges_unc
+        self.epi_outputs_to_analyse = epi_outputs_to_analyse
 
         self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run, self.fixed_parameters)
         self.inputs.read_and_load_data()
@@ -57,7 +59,6 @@ class ModelRunner:
         self.is_last_run_success = True
 
         # output-related attributes
-        self.epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']
         self.epi_outputs = {}
         self.epi_outputs_uncertainty = []
 

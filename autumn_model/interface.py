@@ -4,12 +4,14 @@ from outputs import Project
 
 # user inputs (which could be moved to a GUI as required)
 
-# mode = 'manual'
-mode = 'uncertainty'
+mode = 'manual'
+# mode = 'uncertainty'
 
 country = 'India'
 
 scenarios_to_run = [0, 1, 2]
+
+epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']
 
 input_parameters = {
     'demo_rate_birth': 20. / 1e3,
@@ -44,7 +46,8 @@ model_runner = ModelRunner(country=country,
                            fixed_parameters=input_parameters,
                            mode=mode,
                            scenarios_to_run=scenarios_to_run,
-                           param_ranges_unc=param_ranges_unc)
+                           param_ranges_unc=param_ranges_unc,
+                           epi_outputs_to_analyse=epi_outputs_to_analyse)
 model_runner.master_runner()
-project = Project(model_runner)
+project = Project(model_runner, epi_outputs_to_analyse=epi_outputs_to_analyse)
 project.master_outputs_runner()
