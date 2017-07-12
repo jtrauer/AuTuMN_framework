@@ -425,7 +425,7 @@ class Project:
 
         # add main title and save
         fig.suptitle(self.country + ' model outputs', fontsize=self.suptitle_size)
-        self.save_figure(fig, '_gtb')
+        self.save_figure(fig, '_outputs')
 
     ############################
     ### Miscellaneous method ###

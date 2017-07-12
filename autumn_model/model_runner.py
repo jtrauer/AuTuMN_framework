@@ -33,7 +33,8 @@ class ModelRunner:
 
     def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0], param_ranges_unc=[],
                  epi_outputs_to_analyse=[], uncertainty_accepted_runs=100, burn_in=0,
-                 integration_times=[1900, 2035, .05]):
+                 integration_times=[1900, 2035, .05],
+                 target={'indicator': 'incidence', 'estimate': 150., 'sd': 30., 'year': 2016}):
         """
         Instantiation method for model runner.
 
@@ -52,6 +53,8 @@ class ModelRunner:
         self.uncertainty_accepted_runs = uncertainty_accepted_runs
         self.burn_in = burn_in
         self.integration_times = integration_times
+        self.target = target
+
 
         self.accepted_indices = []
 
@@ -185,8 +188,6 @@ class ModelRunner:
 
         print('Uncertainty analysis commenced')
 
-        target_incidence = [150., 30., 2016]
-
         # prepare for uncertainty loop
         n_accepted = 0
         prev_log_likelihood = -1e10
@@ -229,13 +230,10 @@ class ModelRunner:
                         prior_log_likelihood += numpy.log(1. / (bound_high - bound_low))
 
                 # calculate posterior
-                posterior_log_likelihood = 0.
-
-                incidence_result \
-                    = self.epi_outputs['uncertainty']['incidence'][self.find_time_index(target_incidence[2],
-                                                                                        'uncertainty')]
-
-                posterior_log_likelihood += norm.logpdf(incidence_result, target_incidence[0], target_incidence[1])
+                inc_result \
+                    = self.epi_outputs['uncertainty'][self.target['indicator']][
+                    self.find_time_index(self.target['year'], 'uncertainty')]
+                posterior_log_likelihood = norm.logpdf(inc_result, self.target['estimate'], self.target['sd'])
 
                 # determine acceptance
                 log_likelihood = prior_log_likelihood + posterior_log_likelihood
@@ -256,7 +254,7 @@ class ModelRunner:
                 print('accepted')
                 print(accepted)
                 print('incidence')
-                print(incidence_result)
+                print(inc_result)
                 for i in range(len(self.param_ranges_unc)):
                     print(self.param_ranges_unc[i]['name'])
                     print(new_param_list[i])
