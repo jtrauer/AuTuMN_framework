@@ -85,7 +85,7 @@ class ModelRunner:
             self.run_manual_calibration()
         elif self.mode == 'uncertainty':
             self.run_uncertainty()
-            self.epi_outputs_uncertainty_centiles = self.find_uncertainty_centiles()
+            self.find_uncertainty_centiles()
 
     def run_manual_calibration(self):
         """
@@ -170,12 +170,10 @@ class ModelRunner:
         """
 
         accepted_no_burn_in_indices = [i for i in self.accepted_indices if i > self.burn_in]
-        uncertainty_centiles = {}
         for output in self.epi_outputs_to_analyse:
-            uncertainty_centiles[output] \
+            self.epi_outputs_uncertainty_centiles[output] \
                 = numpy.percentile(self.epi_outputs_uncertainty[output][accepted_no_burn_in_indices, :],
                                    [2.5, 50., 97.5], axis=0)
-        return uncertainty_centiles
 
     ###########################
     ### Uncertainty methods ###
