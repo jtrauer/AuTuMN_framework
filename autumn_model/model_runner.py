@@ -32,7 +32,7 @@ def elementwise_list_addition(increment, list_to_increment):
 class ModelRunner:
 
     def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0], param_ranges_unc=[],
-                 epi_outputs_to_analyse=[], uncertainty_accepted_runs=100):
+                 epi_outputs_to_analyse=[], uncertainty_accepted_runs=100, burn_in=0):
         """
         Instantiation method for model runner.
 
@@ -49,6 +49,7 @@ class ModelRunner:
         self.param_ranges_unc = param_ranges_unc
         self.epi_outputs_to_analyse = epi_outputs_to_analyse
         self.uncertainty_accepted_runs = uncertainty_accepted_runs
+        self.burn_in = burn_in
 
         self.accepted_indices = []
 
@@ -78,6 +79,7 @@ class ModelRunner:
             self.run_manual_calibration()
         elif self.mode == 'uncertainty':
             self.run_uncertainty()
+            self.epi_outputs_uncertainty_centiles = self.find_uncertainty_centiles(self.epi_outputs_uncertainty)
 
     def run_manual_calibration(self):
         """
@@ -154,6 +156,19 @@ class ModelRunner:
                         = elementwise_list_addition(prevalence_increment, epi_outputs['prevalence'])
 
         return epi_outputs
+
+    def find_uncertainty_centiles(self, full_uncertainty_outputs):
+        """
+        Find percentiles from uncertainty dictionaries.
+        """
+
+        accepted_no_burn_in_indices = [i for i in self.accepted_indices if i > self.burn_in]
+        uncertainty_centiles = {}
+        for output in self.epi_outputs_to_analyse:
+            uncertainty_centiles[output] \
+                = numpy.percentile(full_uncertainty_outputs[output][accepted_no_burn_in_indices, :],
+                                   [2.5, 50., 97.5], axis=0)
+        return uncertainty_centiles
 
     ###########################
     ### Uncertainty methods ###

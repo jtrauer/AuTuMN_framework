@@ -223,8 +223,13 @@ class Project:
         # self.level_conversion_dict = {'lower_limit': '_lo', 'upper_limit': '_hi', 'point_estimate': ''}
         #
         # comes up so often that we need to find this index, that best to do once in instantiation
-        self.start_time_index \
-            = tool_kit.find_first_list_element_at_least_value(self.model_runner.epi_outputs[0]['times'], 1990)
+        if self.mode == 'manual':
+            self.start_time_index \
+                = tool_kit.find_first_list_element_at_least_value(self.model_runner.epi_outputs[0]['times'], 1990)
+        elif self.mode == 'uncertainty':
+            self.start_time_index \
+                = tool_kit.find_first_list_element_at_least_value(self.model_runner.epi_outputs['uncertainty']['times'],
+                                                                  1990)
 
     #################################
     # General methods for use below #
@@ -411,14 +416,20 @@ class Project:
             ax = fig.add_subplot(subplot_grid[0], subplot_grid[1], o + 1)
 
             # plot scenarios without uncertainty
-            if ci_plot is None:
-
-                # plot model estimates
+            if self.mode == 'manual':
                 for scenario in self.scenarios[::-1]:  # reversing ensures black baseline plotted over top
                     ax.plot(self.model_runner.epi_outputs[scenario]['times'][self.start_time_index:],
                             self.model_runner.epi_outputs[scenario][output][self.start_time_index:],
                             color=self.output_colours[scenario][1], linestyle=self.output_colours[scenario][0],
                             linewidth=1.5, label='Scenario ' + str(scenario))
+
+            elif self.mode == 'uncertainty':
+                for centile in range(3):
+                    linewidths = {0: .5, 1: 1.5, 2: .5}
+                    ax.plot(self.model_runner.epi_outputs_uncertainty['times'][self.start_time_index:],
+                            self.model_runner.epi_outputs_uncertainty_centiles[output][centile][self.start_time_index:],
+                            linewidth=linewidths[centile], color='k')
+
 
             # # plot with uncertainty confidence intervals
             # elif ci_plot and self.gui_inputs['output_uncertainty']:
