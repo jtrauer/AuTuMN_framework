@@ -49,7 +49,8 @@ class ModelRunner:
     """
 
     def __init__(self, country, fixed_parameters, time_variant_parameters, mode='manual', scenarios_to_run=[0],
-                 param_ranges_unc=[], epi_outputs_to_analyse=[], uncertainty_accepted_runs=50, burn_in=5,
+                 param_ranges_unc=[], epi_outputs_to_analyse=[], scenario_implementation=[],
+                 uncertainty_accepted_runs=50, burn_in=5,
                  integration_times={'start': 1900, 'finish': 2035, 'step': .05},
                  target={'indicator': 'incidence', 'estimate': 150., 'sd': 30., 'year': 2016}):
         """
@@ -75,6 +76,7 @@ class ModelRunner:
         self.scenarios_to_run = scenarios_to_run
         self.param_ranges_unc = param_ranges_unc
         self.epi_outputs_to_analyse = epi_outputs_to_analyse
+        self.scenario_implementation = scenario_implementation
         self.uncertainty_accepted_runs = uncertainty_accepted_runs
         self.burn_in = burn_in
         self.integration_times = integration_times
@@ -82,7 +84,7 @@ class ModelRunner:
 
         # inputs obtained from spreadsheet reading and data processing
         self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run, self.fixed_parameters,
-                                             self.time_variant_parameters)
+                                             self.time_variant_parameters, self.scenario_implementation)
         self.inputs.read_and_load_data()
 
         # dictionary for storing models

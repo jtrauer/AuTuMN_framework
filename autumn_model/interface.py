@@ -33,7 +33,15 @@ fixed_parameters = {'demo_rate_birth': 20. / 1e3,
                     'time_early_treatment': 1. / 52.,
                     'time_treatment': .5}  # fixed value input parameters for the model (some needed further processing)
 
+# user-defined time-variant parameter dictionary with keys interventions and values dictionaries for coverage levels
+# coverage dictionaries have keys years and values for parameter values
 time_variant_parameters = {'prop_vaccination': {1921: 0., 1980: .8, 2015: .85}}
+
+# scenario implementation, list of dictionaries with standardised keys as shown here
+scenario_implementation = [None,
+                           {'intervention': 'prop_vaccination', 'year': 2020, 'coverage': .99},
+                           {'intervention': 'program_prop_detect', 'year': 2017, 'coverage': .9}]
+
 # param_ranges_unc is a dictionary of uncertainty parameters, with standardised keys. To add more parameters,
 # add another list element with the same set of keys as the following:
 param_ranges_unc = [{'name': 'tb_n_contact',
@@ -55,8 +63,8 @@ target_incidence = {'indicator': 'incidence',
 # code to start the model running (not for user interaction)____________________________________________________________
 
 model_runner = ModelRunner(country, fixed_parameters, time_variant_parameters, mode, scenarios_to_run, param_ranges_unc,
-                           epi_outputs_to_analyse, uncertainty_accepted_runs, burn_in, integration_times,
-                           target_incidence)
+                           epi_outputs_to_analyse, scenario_implementation, uncertainty_accepted_runs, burn_in,
+                           integration_times, target_incidence)
 model_runner.master_runner()
 project = Project(model_runner, plot_start_time)
 project.master_outputs_runner()
