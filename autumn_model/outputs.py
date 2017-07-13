@@ -4,10 +4,16 @@ from matplotlib import pyplot
 import platform
 import os
 
+"""
+Module that contains code for generating all outputs from simulation. Epidemiological plotting is presented here as an
+illustration. Other outputs that can be accommodated with a similar approach include writing to Excel spreadsheets and
+Word documents.
+"""
+
 
 def find_reasonable_year_ticks(start_time, end_time):
     """
-    Function to find a reasonable spacing between years for x-ticks.
+    Function to find reasonable spacing between years for x-ticks.
 
     Args:
         start_time: Float for left x-limit in years
@@ -39,15 +45,14 @@ def find_reasonable_year_ticks(start_time, end_time):
 
 def find_standard_output_styles(labels):
     """
-    Function to find some standardised colours for the outputs we'll typically
-    be reporting on - i.e. incidence, prevalence, mortality and notifications.
-    Incidence is black/grey, prevalence green, mortality red and notifications blue.
+    Function to find some standardised colours for the outputs we'll typically be reporting on - here only incidence and
+    prevalence, but can easily be extended to accommodate more.
 
     Args:
         labels: List containing strings for the outputs that colours are needed for.
     Returns:
         yaxis_label: Unit of measurement for outcome
-        title: Title for plot (so far usually a subplot)
+        title: Title for subplot
     """
 
     yaxis_label = {}
@@ -105,14 +110,12 @@ def scale_axes(vals, max_val, y_sig_figs):
 
 def make_default_line_styles(n):
     """
-    Produces a standard set of line styles that isn't adapted to the data being plotted.
+    Produces a standard set of line colours and styles as a matplotlib-interpretable string.
 
     Args:
         n: The number of line-styles
-        return_all: Whether to return all of the styles up to n or just the last one
     Returns:
-        line_styles: A list of standard line-styles, or if return_all is False,
-            then the single item (for methods that are iterating through plots.
+        line_styles: The list of standard line-styles
     """
 
     for i in range(n):
@@ -127,11 +130,12 @@ class Project:
 
     def __init__(self, model_runner, plot_start_time):
         """
-        Initialises an object of class Project, that will contain all the information (data + outputs) for writing a
-        report for a country.
+        General outputs object, that uses data from the model runner to display epidemiological outputs from the
+        simulations run previously.
 
         Args:
             model_runner: The entire model runner object that was responsible for coordinating all model runs
+            plot_start_time: The left extreme for x-axes plotting values against time
         """
 
         self.model_runner = model_runner
@@ -141,8 +145,7 @@ class Project:
         self.scenarios = self.model_runner.scenarios_to_run
         self.name = 'test_' + self.country
         self.out_dir_project = os.path.join('projects', self.name)
-        if not os.path.isdir(self.out_dir_project):
-            os.makedirs(self.out_dir_project)
+        if not os.path.isdir(self.out_dir_project): os.makedirs(self.out_dir_project)
         self.output_colours = {}
         self.plot_start_time = plot_start_time
         if self.mode == 'manual':
@@ -157,8 +160,7 @@ class Project:
         Simple method to standardise names for output figure files.
 
         Args:
-            last_part_of_name_for_figure: The part of the figure name that is variable and input from the
-                plotting method.
+            last_part_of_name_for_figure: The part of the figure name that is variable
         """
 
         png = os.path.join(self.out_dir_project, self.country + last_part_of_name_for_figure + '.png')
@@ -170,7 +172,6 @@ class Project:
         as an example.
         """
 
-        # master plotting method
         self.run_plotting()
         self.open_output_directory()
 
@@ -179,12 +180,8 @@ class Project:
         Master plotting method to call all the methods that produce specific plots.
         """
 
-        # find some general output colours
         output_colours = make_default_line_styles(5)
-        for scenario in self.scenarios:
-            self.output_colours[scenario] = output_colours[scenario]
-
-        # plot main outputs
+        for scenario in self.scenarios: self.output_colours[scenario] = output_colours[scenario]
         self.plot_epi_outputs(self.epi_outputs_to_analyse)
 
     def plot_epi_outputs(self, outputs):
@@ -206,7 +203,7 @@ class Project:
             # preliminaries
             ax = fig.add_subplot(1, len(outputs) - 1, o + 1)
 
-            # plotting (manual or uncertainty)
+            # plotting (either manual or uncertainty)
             if self.mode == 'manual':
                 for scenario in self.scenarios[::-1]:  # reversing ensures black baseline plotted over top
                     if scenario == 0:
