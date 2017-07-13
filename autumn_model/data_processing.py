@@ -39,15 +39,21 @@ class Inputs:
         # work through all remaining parameter processing methods
         self.process_parameters()
         self.process_case_detection()
-        for parameter in self.time_variant_parameters:
-            for scenario in self.scenarios:
-                self.scaleup_data[scenario][parameter] = copy.copy(self.time_variant_parameters[parameter])
+        self.extract_time_variants()
         self.create_scenarios()
         self.find_scaleup_functions()
 
     ###########################
     ### Second-tier methods ###
     ###########################
+
+    def find_keys_of_sheets_to_read(self):
+        """
+        Find keys of spreadsheets to read. Pretty simplistic at this stage, but can get more complicated as
+        further sheets are added.
+        """
+
+        return ['tb']
 
     def process_parameters(self):
         """
@@ -74,19 +80,34 @@ class Inputs:
         Extract case detection rates from data read in from Global TB Report and then add a zero at the start.
         """
 
+        self.time_variant_parameters['program_prop_detect'] \
+            = {i: j / 1e2 for i, j in self.original_data['tb']['c_cdr'].items()}
+        self.time_variant_parameters['program_prop_detect'][1950] = 0.
+
+    def extract_time_variants(self):
+        """
+        Extract the data for each individual time-variant parameter to a dictionary for each scenario and for each
+        scaling parameter.
+        """
+
         for scenario in self.scenarios:
             self.scaleup_data[scenario] = {}
-            self.scaleup_data[scenario]['program_prop_detect'] \
-                = {i: j / 1e2 for i, j in self.original_data['tb']['c_cdr'].items()}
-            self.scaleup_data[scenario]['program_prop_detect'][1950] = 0.
+            for parameter in self.time_variant_parameters:
+                self.scaleup_data[scenario][parameter] = copy.copy(self.time_variant_parameters[parameter])
 
     def create_scenarios(self):
+        """
+        Use scenario dictionary to add additional values to scale-up data functions.
+        """
 
         for scenario in self.scenarios[1:]:
             self.scaleup_data[scenario][self.scenario_implementation[scenario]['intervention']].update(
                 {self.scenario_implementation[scenario]['year']: self.scenario_implementation[scenario]['coverage']})
 
     def find_scaleup_functions(self):
+        """
+        Create functions for scaling parameters, using the curve module.
+        """
 
         for scenario in self.scenarios:
             self.scaleup_fns[scenario] = {}
@@ -94,10 +115,3 @@ class Inputs:
                 self.scaleup_fns[scenario][time_variant_parameter] \
                     = curve.function_creator(self.scaleup_data[scenario][time_variant_parameter])
 
-    def find_keys_of_sheets_to_read(self):
-        """
-        Find keys of spreadsheets to read. Pretty simplistic at this stage, but can get more complicated as
-        further sheets are added.
-        """
-
-        return ['tb']
