@@ -5,6 +5,10 @@ import copy
 
 
 class Inputs:
+    """
+    Object responsible for processing both user inputs and data read from the input spreadsheets through the
+    spreadsheet module.
+    """
 
     def __init__(self, country, scenarios_to_run, fixed_parameters, time_variant_parameters,
                  scenario_implementation=[]):
@@ -14,12 +18,8 @@ class Inputs:
         self.fixed_parameters = fixed_parameters
         self.time_variant_parameters = time_variant_parameters
         self.scenario_implementation = scenario_implementation
-
-        # parameter structures
         self.original_data = None
         self.derived_data = {}
-        self.time_variants = {}
-        self.model_constants = {}
         self.scaleup_data = {}
         self.scaleup_fns = {}
 
@@ -32,10 +32,11 @@ class Inputs:
         Master method of this object, calling all sub-methods to read and process data and define model structure.
         """
 
-        # read all required data
+        # read all required external data
         print('Reading Excel sheets with input data.\n')
         self.original_data = spreadsheet.read_input_data_xls(self.find_keys_of_sheets_to_read(), self.country)
 
+        # work through all remaining parameter processing methods
         self.process_parameters()
         self.process_case_detection()
         for parameter in self.time_variant_parameters:
@@ -49,10 +50,15 @@ class Inputs:
     ###########################
 
     def process_parameters(self):
+        """
+        Convert raw parameters into interpreted parameters.
+        """
 
+        # find late (non-infectious) treatment period from total and early treatment periods
         self.fixed_parameters['time_late_treatment'] \
             = self.fixed_parameters['time_treatment'] - self.fixed_parameters['time_early_treatment']
 
+        # convert treatment progress rates from proportions into rates
         derived_parameters = {}
         for param in self.fixed_parameters:
             if 'program_prop' in param and '_infect' in param:
@@ -64,6 +70,9 @@ class Inputs:
         self.fixed_parameters.update(derived_parameters)
 
     def process_case_detection(self):
+        """
+        Extract case detection rates from data read in from Global TB Report and then add a zero at the start.
+        """
 
         for scenario in self.scenarios:
             self.scaleup_data[scenario] = {}

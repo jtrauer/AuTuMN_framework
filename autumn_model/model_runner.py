@@ -63,6 +63,7 @@ class ModelRunner:
             scenarios_to_run: List of values for scenarios to be simulated (with 0 being baseline)
             param_ranges_unc: List of dictionaries for the uncertainty parameters to be considered
             epi_outputs_to_analyse: List of strings for the epidemiological outcomes of interest (e.g. incidence)
+            scenario_implementation: List of dictionaries for scenarios to be implemented as described in interface
             uncertainty_accepted_runs: How many accepted uncertainty runs are required
             burn_in: How many runs to be discarded as a burn in
             target: Dictionary describing values for model to be calibrated against
