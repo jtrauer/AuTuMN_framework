@@ -5,11 +5,12 @@ import curve
 
 class Inputs:
 
-    def __init__(self, country, scenarios_to_run, fixed_parameters):
+    def __init__(self, country, scenarios_to_run, fixed_parameters, time_variant_parameters):
 
         self.country = country
         self.scenarios = scenarios_to_run
         self.fixed_parameters = fixed_parameters
+        self.time_variant_parameters = time_variant_parameters
 
         # parameter structures
         self.original_data = None
@@ -33,19 +34,11 @@ class Inputs:
         self.original_data = spreadsheet.read_input_data_xls(self.find_keys_of_sheets_to_read(), self.country)
 
         self.process_parameters()
-
         self.process_case_detection()
-
-        for scenario in self.scenarios:
-            self.scaleup_data[scenario]['prop_vaccination'] = {1921: 0., 1980: .8, 2015: .85}
-            if scenario == 1:
-                self.scaleup_data[1]['prop_vaccination'][2020] = .99
-            if scenario == 2:
-                self.scaleup_data[2]['program_prop_detect'][2017] = .9
-            self.scaleup_fns[scenario] = {}
-            for time_variant_parameter in ['program_prop_detect', 'prop_vaccination']:
-                self.scaleup_fns[scenario][time_variant_parameter] \
-                    = curve.function_creator(self.scaleup_data[scenario][time_variant_parameter])
+        for parameter in self.time_variant_parameters:
+            for scenario in self.scenarios:
+                self.scaleup_data[scenario][parameter] = self.time_variant_parameters[parameter]
+        self.create_scenarios()
 
     ###########################
     ### Second-tier methods ###
@@ -73,6 +66,18 @@ class Inputs:
             self.scaleup_data[scenario]['program_prop_detect'] \
                 = {i: j / 1e2 for i, j in self.original_data['tb']['c_cdr'].items()}
             self.scaleup_data[scenario]['program_prop_detect'][1950] = 0.
+
+    def create_scenarios(self):
+
+        for scenario in self.scenarios:
+            if scenario == 1:
+                self.scaleup_data[1]['prop_vaccination'][2020] = .99
+            if scenario == 2:
+                self.scaleup_data[2]['program_prop_detect'][2017] = .9
+            self.scaleup_fns[scenario] = {}
+            for time_variant_parameter in ['program_prop_detect', 'prop_vaccination']:
+                self.scaleup_fns[scenario][time_variant_parameter] \
+                    = curve.function_creator(self.scaleup_data[scenario][time_variant_parameter])
 
     def find_keys_of_sheets_to_read(self):
         """

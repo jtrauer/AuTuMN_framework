@@ -15,7 +15,7 @@ country = 'India'  # must accord with the country string used in the Global TB R
 scenarios_to_run = [0, 1, 2]  # scenarios to be run
 epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']  # epidemiological outputs to be assessed
 plot_start_time = 2005  # left border of x-axes on output plots
-input_parameters = {'demo_rate_birth': 20. / 1e3,
+fixed_parameters = {'demo_rate_birth': 20. / 1e3,
                     'demo_rate_death': 1. / 65,
                     'tb_n_contact': 20.,
                     'tb_rate_earlyprogress': .1 / .5,
@@ -32,6 +32,8 @@ input_parameters = {'demo_rate_birth': 20. / 1e3,
                     'int_vaccine_efficacy': .5,
                     'time_early_treatment': 1. / 52.,
                     'time_treatment': .5}  # fixed value input parameters for the model (some needed further processing)
+
+time_variant_parameters = {'prop_vaccination': {1921: 0., 1980: .8, 2015: .85}}
 # param_ranges_unc is a dictionary of uncertainty parameters, with standardised keys. To add more parameters,
 # add another list element with the same set of keys as the following:
 param_ranges_unc = [{'name': 'tb_n_contact',
@@ -52,8 +54,9 @@ target_incidence = {'indicator': 'incidence',
 
 # code to start the model running (not for user interaction)____________________________________________________________
 
-model_runner = ModelRunner(country, input_parameters, mode, scenarios_to_run, param_ranges_unc, epi_outputs_to_analyse,
-                           uncertainty_accepted_runs, burn_in, integration_times, target_incidence)
+model_runner = ModelRunner(country, fixed_parameters, time_variant_parameters, mode, scenarios_to_run, param_ranges_unc,
+                           epi_outputs_to_analyse, uncertainty_accepted_runs, burn_in, integration_times,
+                           target_incidence)
 model_runner.master_runner()
 project = Project(model_runner, plot_start_time)
 project.master_outputs_runner()

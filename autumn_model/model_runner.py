@@ -48,8 +48,8 @@ class ModelRunner:
     Stores model objects as attributes to itself.
     """
 
-    def __init__(self, country, fixed_parameters, mode='manual', scenarios_to_run=[0], param_ranges_unc=[],
-                 epi_outputs_to_analyse=[], uncertainty_accepted_runs=50, burn_in=5,
+    def __init__(self, country, fixed_parameters, time_variant_parameters, mode='manual', scenarios_to_run=[0],
+                 param_ranges_unc=[], epi_outputs_to_analyse=[], uncertainty_accepted_runs=50, burn_in=5,
                  integration_times={'start': 1900, 'finish': 2035, 'step': .05},
                  target={'indicator': 'incidence', 'estimate': 150., 'sd': 30., 'year': 2016}):
         """
@@ -70,6 +70,7 @@ class ModelRunner:
         # convert arguments to attributes
         self.country = country
         self.fixed_parameters = fixed_parameters
+        self.time_variant_parameters = time_variant_parameters
         self.mode = mode
         self.scenarios_to_run = scenarios_to_run
         self.param_ranges_unc = param_ranges_unc
@@ -80,7 +81,8 @@ class ModelRunner:
         self.target = target
 
         # inputs obtained from spreadsheet reading and data processing
-        self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run, self.fixed_parameters)
+        self.inputs = data_processing.Inputs(self.country, self.scenarios_to_run, self.fixed_parameters,
+                                             self.time_variant_parameters)
         self.inputs.read_and_load_data()
 
         # dictionary for storing models
