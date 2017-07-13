@@ -10,9 +10,9 @@ can be constructed out of the code contained here.
 
 # user inputs __________________________________________________________________________________________________________
 
+# basic model features__________________________________________________________________________________________________
 mode = 'manual'  # must be either 'manual' or 'uncertainty'
 country = 'India'  # must accord with the country string used in the Global TB Report
-scenarios_to_run = [0, 1, 2]  # scenarios to be run
 epi_outputs_to_analyse = ['population', 'incidence', 'prevalence']  # epidemiological outputs to be assessed
 plot_start_time = 2005  # left border of x-axes on output plots
 fixed_parameters = {'demo_rate_birth': 20. / 1e3,
@@ -37,11 +37,15 @@ fixed_parameters = {'demo_rate_birth': 20. / 1e3,
 # coverage dictionaries have keys years and values for parameter values
 time_variant_parameters = {'prop_vaccination': {1921: 0., 1980: .8, 2015: .85}}
 
-# scenario implementation, list of dictionaries with standardised keys as shown here
+# scenario input________________________________________________________________________________________________________
+# scenario implementation, list of dictionaries with first element None for the baseline scenario and then standardised
+# keys as shown:
 scenario_implementation = [None,
                            {'intervention': 'prop_vaccination', 'year': 2020, 'coverage': .99},
                            {'intervention': 'program_prop_detect', 'year': 2017, 'coverage': .9}]
+scenarios_to_run = range(len(scenario_implementation))
 
+# uncertainty inputs____________________________________________________________________________________________________
 # param_ranges_unc is a dictionary of uncertainty parameters, with standardised keys. To add more parameters,
 # add another list element with the same set of keys as the following:
 param_ranges_unc = [{'name': 'tb_n_contact',
@@ -61,7 +65,6 @@ target_incidence = {'indicator': 'incidence',
                     'year': 2016}  # dictionary for output comparison with fixed keys expected by model runner
 
 # code to start the model running (not for user interaction)____________________________________________________________
-
 model_runner = ModelRunner(country, fixed_parameters, time_variant_parameters, mode, scenarios_to_run, param_ranges_unc,
                            epi_outputs_to_analyse, scenario_implementation, uncertainty_accepted_runs, burn_in,
                            integration_times, target_incidence)
