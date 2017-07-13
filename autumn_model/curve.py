@@ -2,8 +2,15 @@
 import numpy
 import tool_kit
 
+"""
+Very simplistic curve fitting module. In reality, AuTuMN uses piecewise-composed polynomial spline functions to fit
+time-variant parameters to data. However, this adds a number of levels of complexity, as the polynomial functions
+frequently must have a restricted range. Therefore, a very simple sinusoidal curve-fitting module is presented here as
+a basic example.
+"""
 
-def sinusiodal_scaleup(time, x_start, y_start, duration, magnitude):
+
+def sinusoidal_scaleup(time, x_start, y_start, duration, magnitude):
     """
     Uses a cosine function to create a simple sinusional function scaling up over "magnitude" and period of time
     "duration" from starting value "y_start" at time "x_start".
@@ -38,6 +45,6 @@ def function_creator(input_dict):
         else:
             for k in range(len(time_data)):
                 if time_data[k] <= time < time_data[k + 1]:
-                    return sinusiodal_scaleup(time, time_data[k], values[k],
+                    return sinusoidal_scaleup(time, time_data[k], values[k],
                                               float(time_data[k + 1] - time_data[k]), values[k + 1] - values[k])
     return scaleup_function
