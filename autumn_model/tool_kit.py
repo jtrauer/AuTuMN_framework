@@ -17,30 +17,6 @@ def find_first_list_element_at_least_value(list, value):
     return next(x[0] for x in enumerate(list) if x[1] >= value)
 
 
-def adjust_country_name(country_name, adjustment='default'):
-    """
-    Currently very simple method to convert one country's name into that used by the GTB Report. However, likely to
-    need to expand this as we work with more countries.
-
-    Args:
-        country_name: String for the original country name
-        adjustment: In case multiple adjustments could be required, allow for alternative sets of name adjustments
-    Returns:
-        adjusted_country_name: Adjusted string
-    """
-
-    if adjustment == 'for_vaccination':
-        if country_name == 'Moldova':
-            return 'Republic of ' + country_name + ' (the)'
-    else:
-        if country_name == 'Philippines':
-            return country_name + ' (the)'
-        elif country_name == 'Moldova':
-            return 'Republic of ' + country_name
-        else:
-            return country_name
-
-
 def replace_specified_value(a_list, new_val, old_value):
     """
     Replace all elements of a list that are a certain value with a new value specified in the inputs.
@@ -49,6 +25,8 @@ def replace_specified_value(a_list, new_val, old_value):
          a_list: The list being modified
          new_val: The value to insert into the list
          old_value: The value of the list to be replaced
+    Return:
+         List with values replaced as described
     """
 
     return [new_val if val == old_value else val for val in a_list]
@@ -94,4 +72,31 @@ def extract_ordered_list_from_dictionary(dictionary):
     return extract_list_of_paired_tuples_to_list(sort_dictionary_to_list_by_keys(dictionary))
 
 
+def prepare_denominator(list_to_prepare):
+    """
+    Method to safely divide a list of numbers while ignoring zero denominators by adding a very small value to any
+    zeroes.
 
+    Args:
+        list_to_prepare: The list to be used as a denominator
+    Returns:
+        The list with zeros replaced with small numbers
+    """
+
+    return [list_to_prepare[i] if list_to_prepare[i] > 0. else 1e-10 for i in range(len(list_to_prepare))]
+
+
+def elementwise_list_addition(increment, list_to_increment):
+    """
+    Simple method to element-wise increment a list by the values in another list of the same length
+    (as is needed in output generation).
+
+    Args:
+        increment: A list of values to be added to the previous list
+        list_to_increment: The original list to be incremented
+    Returns:
+        The resulting list with elements being the sum of the elements of the two lists
+    """
+
+    assert len(increment) == len(list_to_increment), 'Attempted to increment lists with two lists of different lengths'
+    return [sum(x) for x in zip(list_to_increment, increment)]

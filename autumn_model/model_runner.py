@@ -5,41 +5,12 @@ from basepop import BaseModel, make_sigmoidal_curve
 from outputs import Project
 from scipy.stats import norm, beta
 import numpy
+import tool_kit
 
 """
 This module provides an object-oriented structure for running model objects. Manual calibration and uncertainty are
 provided as examples (being largely user-coded, with few dependencies for the main running processes).
 """
-
-
-def prepare_denominator(list_to_prepare):
-    """
-    Method to safely divide a list of numbers while ignoring zero denominators by adding a very small value to any
-    zeroes.
-
-    Args:
-        list_to_prepare: The list to be used as a denominator
-    Returns:
-        The list with zeros replaced with small numbers
-    """
-
-    return [list_to_prepare[i] if list_to_prepare[i] > 0. else 1e-10 for i in range(len(list_to_prepare))]
-
-
-def elementwise_list_addition(increment, list_to_increment):
-    """
-    Simple method to element-wise increment a list by the values in another list of the same length
-    (as is needed in output generation).
-
-    Args:
-        increment: A list of values to be added to the previous list
-        list_to_increment: The original list to be incremented
-    Returns:
-        The resulting list with elements being the sum of the elements of the two lists
-    """
-
-    assert len(increment) == len(list_to_increment), 'Attempted to increment lists with two lists of different lengths'
-    return [sum(x) for x in zip(list_to_increment, increment)]
 
 
 class ModelRunner:
@@ -157,9 +128,9 @@ class ModelRunner:
         if 'population' in self.epi_outputs_to_analyse:
             for compartment in self.model_dict[scenario].compartments:
                 epi_outputs['population'] \
-                    = elementwise_list_addition(self.model_dict[scenario].get_compartment_soln(compartment),
-                                                epi_outputs['population'])
-        total_denominator = prepare_denominator(epi_outputs['population'])
+                    = tool_kit.elementwise_list_addition(self.model_dict[scenario].get_compartment_soln(compartment),
+                                                         epi_outputs['population'])
+        total_denominator = tool_kit.prepare_denominator(epi_outputs['population'])
 
         # incidence
         if 'incidence' in self.epi_outputs_to_analyse:
@@ -169,7 +140,8 @@ class ModelRunner:
                 if 'latent' in from_label and 'active' in to_label:
                     incidence_increment \
                         = self.model_dict[scenario].get_compartment_soln(from_label) * rate / total_denominator * 1e5
-                    epi_outputs['incidence'] = elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
+                    epi_outputs['incidence'] \
+                        = tool_kit.elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
 
             # variable flows (note that there are currently none to which this is applicable, but could be)
             for from_label, to_label, rate in self.model_dict[scenario].var_transfer_rate_flows:
@@ -177,7 +149,8 @@ class ModelRunner:
                     incidence_increment \
                         = self.model_dict[scenario].get_compartment_soln(from_label) \
                           * self.model_dict[scenario].get_var_soln(rate) / total_denominator * 1e5
-                    epi_outputs['incidence'] = elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
+                    epi_outputs['incidence'] \
+                        = tool_kit.elementwise_list_addition(incidence_increment, epi_outputs['incidence'])
 
         # prevalence
         if 'prevalence' in self.epi_outputs_to_analyse:
@@ -186,7 +159,7 @@ class ModelRunner:
                     prevalence_increment = self.model_dict[scenario].get_compartment_soln(label) \
                                            / total_denominator * 1e5
                     epi_outputs['prevalence'] \
-                        = elementwise_list_addition(prevalence_increment, epi_outputs['prevalence'])
+                        = tool_kit.elementwise_list_addition(prevalence_increment, epi_outputs['prevalence'])
 
         return epi_outputs
 

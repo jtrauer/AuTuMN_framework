@@ -28,7 +28,7 @@ class GlobalTbReportReader:
         self.start_column = 0
         self.indices = []
         self.year_indices = {}
-        self.country_to_read = tool_kit.adjust_country_name(country_to_read)
+        self.country_to_read = country_to_read
 
     def parse_col(self, col):
         """
