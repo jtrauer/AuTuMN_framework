@@ -10,14 +10,14 @@ class Inputs:
     spreadsheet module.
     """
 
-    def __init__(self, country, scenarios_to_run, fixed_parameters, time_variant_parameters,
+    def __init__(self, country, fixed_parameters, time_variant_parameters,
                  scenario_implementation=[]):
 
         self.country = country
-        self.scenarios = scenarios_to_run
         self.fixed_parameters = fixed_parameters
         self.time_variant_parameters = time_variant_parameters
         self.scenario_implementation = scenario_implementation
+        self.scenarios_to_run = range(len(scenario_implementation))
         self.original_data = None
         self.derived_data = {}
         self.scaleup_data = {}
@@ -90,7 +90,7 @@ class Inputs:
         scaling parameter.
         """
 
-        for scenario in self.scenarios:
+        for scenario in self.scenarios_to_run:
             self.scaleup_data[scenario] = {}
             for parameter in self.time_variant_parameters:
                 self.scaleup_data[scenario][parameter] = copy.copy(self.time_variant_parameters[parameter])
@@ -100,7 +100,7 @@ class Inputs:
         Use scenario dictionary to add additional values to scale-up data functions.
         """
 
-        for scenario in self.scenarios[1:]:
+        for scenario in self.scenarios_to_run[1:]:
             self.scaleup_data[scenario][self.scenario_implementation[scenario]['intervention']].update(
                 {self.scenario_implementation[scenario]['year']: self.scenario_implementation[scenario]['coverage']})
 
@@ -109,7 +109,7 @@ class Inputs:
         Create functions for scaling parameters, using the curve module.
         """
 
-        for scenario in self.scenarios:
+        for scenario in self.scenarios_to_run:
             self.scaleup_fns[scenario] = {}
             for time_variant_parameter in ['program_prop_detect', 'prop_vaccination']:
                 self.scaleup_fns[scenario][time_variant_parameter] \

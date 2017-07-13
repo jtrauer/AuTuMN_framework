@@ -43,7 +43,6 @@ time_variant_parameters = {'prop_vaccination': {1921: 0., 1980: .8, 2015: .85}}
 scenario_implementation = [None,
                            {'intervention': 'prop_vaccination', 'year': 2020, 'coverage': .99},
                            {'intervention': 'program_prop_detect', 'year': 2017, 'coverage': .9}]
-scenarios_to_run = range(len(scenario_implementation))
 
 # uncertainty inputs____________________________________________________________________________________________________
 # param_ranges_unc is a dictionary of uncertainty parameters, with standardised keys. To add more parameters,
@@ -65,7 +64,7 @@ target_incidence = {'indicator': 'incidence',
                     'year': 2016}  # dictionary for output comparison with fixed keys expected by model runner
 
 # code to start the model running (not for user interaction)____________________________________________________________
-model_runner = ModelRunner(country, fixed_parameters, time_variant_parameters, mode, scenarios_to_run, param_ranges_unc,
+model_runner = ModelRunner(country, fixed_parameters, time_variant_parameters, mode, param_ranges_unc,
                            epi_outputs_to_analyse, scenario_implementation, uncertainty_accepted_runs, burn_in,
                            integration_times, target_incidence)
 model_runner.master_runner()
