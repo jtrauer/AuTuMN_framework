@@ -12,6 +12,9 @@ import tool_kit
 #######################################
 
 class GlobalTbReportReader:
+    """
+    Reader object for the WHO's Global TB Report 2016. Illustrates general structure for spreadsheet readers.
+    """
 
     def __init__(self, country_to_read):
 
@@ -28,6 +31,12 @@ class GlobalTbReportReader:
         self.country_to_read = tool_kit.adjust_country_name(country_to_read)
 
     def parse_col(self, col):
+        """
+        Read and interpret a column of the spreadsheet
+
+        Args:
+            col: The column to be read
+        """
 
         col = tool_kit.replace_specified_value(col, nan, '')
 
@@ -45,7 +54,7 @@ class GlobalTbReportReader:
             for i in self.indices:
                 self.year_indices[int(col[i])] = i
 
-        # get data from remaining columns
+        # get data from the remaining (data) columns
         else:
             self.data[str(col[0])] = {}
             for year in self.year_indices:
@@ -53,6 +62,9 @@ class GlobalTbReportReader:
                     self.data[col[0]][year] = col[self.year_indices[year]]
 
     def get_data(self):
+        """
+        Return the read data.
+        """
 
         return self.data
 
@@ -63,12 +75,12 @@ class GlobalTbReportReader:
 
 def read_xls_with_sheet_readers(sheet_readers):
     """
-    Runs the individual readers to gather all the data from the sheets
+    Runs each of the individual readers (currently only one) to gather all the data from the input spreadsheets.
 
     Args:
-        sheet_readers: The sheet readers that were previously collated into a list
+        sheet_readers: The sheet readers that have been collated into a list
     Returns:
-        All the data for reading as a single object
+        All the data from the reading process as a single object
     """
 
     result = {}
@@ -106,21 +118,16 @@ def read_input_data_xls(sheets_to_read, country=None):
     while only the fixed parameters sheet reader does not.
 
     Args:
-        from_test: Whether being called from the directory above
-        sheets_to_read: A list containing the strings that are also the
-            'keys' attribute of the reader
-        country: Country being read for
+        sheets_to_read: A list containing the strings that are also the 'keys' attribute of each reader
+        country: Country being read
 
     Returns:
         A single data structure containing all the data to be read
-            (by calling the read_xls_with_sheet_readers method)
     """
 
     sheet_readers = []
-    if 'tb' in sheets_to_read:
-        sheet_readers.append(GlobalTbReportReader(country))
-    for reader in sheet_readers:
-        reader.filename = os.path.join(reader.filename)
+    if 'tb' in sheets_to_read: sheet_readers.append(GlobalTbReportReader(country))
+    for reader in sheet_readers: reader.filename = os.path.join(reader.filename)
     return read_xls_with_sheet_readers(sheet_readers)
 
 
