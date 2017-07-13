@@ -4,54 +4,27 @@ import sys
 sys.path.append('C:/Users/James/Desktop/popdynamics/popdynamics/')
 from basepop import BaseModel
 
+"""
+A simple TB model for use in this framework platform. It is built upon the BaseModel class inherited from the basepop
+repository (which is a dependency). This version is considerably simpler than most country-level AuTuMN levels, having
+one stratification example (by risk group). The example only provides the code structure for elaborating the model and
+the risk groups do not have any function in this version. Further stratifications can be added by including loops for
+age groups, organ involvement (e.g. smear-positive, smear-negative, extrapulmonary), health system (e.g. public and
+private), etc. Note that not all such stratifications would be incorporated in exactly the same way - for example, the
+loop for organ involvement would only apply to compartments representing patients with active disease.
+"""
 
-########################################################
-### Static functions for graphing and managing files ###
-########################################################
-
-
-def make_plots(model, out_dir):
-    """
-    Make some basic graphs of the scaling time-variant parameters and the basic model outputs.
-
-    Args:
-        model: Instance of the model object to be interrogated
-        out_dir: The directory to put the graphs in
-    """
-
-    import pylab
-
-    # scaling case detection rate
-    pylab.clf()
-    scaleup_fn = model.scaleup_fns['program_rate_detect']
-    y_vals = map(scaleup_fn, model.times)
-    pylab.plot(model.times, y_vals)
-    pylab.title('scaleup test curve')
-    pylab.savefig(os.path.join(out_dir, 'scaleup.png'))
-
-    # main epidemiological outputs
-    pylab.clf()
-    for var_key in ['mortality', 'incidence', 'prevalence']:
-        soln = model.get_var_soln(var_key)
-        pylab.plot(model.times, soln, label=var_key)
-    pylab.legend()
-    pylab.savefig(os.path.join(out_dir, 'fraction.png'))
-
-
-#################################
-### Define model object class ###
-#################################
 
 class SimpleTbModel(BaseModel):
     """
-    Initial TB model by James Trauer.
-    Nested inheritance from BaseModel, which applies to any infectious disease generally.
+    Initial TB model. Nested inheritance from BaseModel, which applies to any infectious disease generally.
     """
 
     def __init__(self, fixed_parameters, inputs, scenario=0):
         """
         Inputs:
-            interventions: List of interventions to be simulated in the run of the model
+            fixed_parameters: Fixed constant model parameters (including those that can be over-ridden in uncertainty)
+            inputs: Other user and spreadsheet inputs
         """
 
         BaseModel.__init__(self)
@@ -60,8 +33,6 @@ class SimpleTbModel(BaseModel):
         self.scenario = scenario
         self.riskgroups = ['']
         self.riskgroup_proportions = {'': 1.}
-        # self.riskgroups = ['_nocomorb', '_hiv']
-        # self.riskgroup_proportions = {'_nocomorb': .9, '_hiv': .1}
 
         # define all compartments, initialise as empty and then populate
         model_compartments \
@@ -81,7 +52,8 @@ class SimpleTbModel(BaseModel):
 
     def calculate_vars(self):
         """
-        Calculate values that change with time over the course of model integration.
+        Calculate values that change with time over the course of model integration, which require information from the
+        model for their calculation.
         """
 
         # demographic
@@ -112,7 +84,7 @@ class SimpleTbModel(BaseModel):
 
     def set_flows(self):
         """
-        Set inter-compartmental flows, whether time-variant or constant
+        Set inter-compartmental flows (whether time-variant or constant).
         """
 
         for riskgroup in self.riskgroups:
@@ -197,13 +169,11 @@ class SimpleTbModel(BaseModel):
         rate_incidence = 0.
         for from_label, to_label, rate in self.fixed_transfer_rate_flows:
             val = self.compartments[from_label] * rate
-            if 'latent' in from_label and 'active' in to_label:
-                rate_incidence += val
+            if 'latent' in from_label and 'active' in to_label: rate_incidence += val
         self.vars['incidence'] = rate_incidence / self.vars['population'] * 1e5
 
         # proportion latently infected
         self.vars['latent'] = 0.
         for label in self.labels:
-            if 'latent' in label:
-                self.vars['latent'] += (self.compartments[label] / self.vars['population'] * 1e5)
+            if 'latent' in label: self.vars['latent'] += (self.compartments[label] / self.vars['population'] * 1e5)
 
