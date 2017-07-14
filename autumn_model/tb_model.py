@@ -1,8 +1,5 @@
 
-import sys
-sys.path.append('C:/Users/James/Desktop/popdynamics/popdynamics/')
 from basepop import BaseModel
-import copy
 
 """
 A simple TB model for use in this framework platform. It is built upon the BaseModel class inherited from the basepop
