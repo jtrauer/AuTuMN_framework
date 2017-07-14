@@ -1,8 +1,8 @@
-import os
-import sys
 
+import sys
 sys.path.append('C:/Users/James/Desktop/popdynamics/popdynamics/')
 from basepop import BaseModel
+import copy
 
 """
 A simple TB model for use in this framework platform. It is built upon the BaseModel class inherited from the basepop
@@ -15,12 +15,12 @@ loop for organ involvement would only apply to compartments representing patient
 """
 
 
-class SimpleTbModel(BaseModel):
+class TbModel(BaseModel):
     """
     Initial TB model. Nested inheritance from BaseModel, which applies to any infectious disease generally.
     """
 
-    def __init__(self, fixed_parameters, inputs, scenario=0):
+    def __init__(self, fixed_parameters, inputs, scenario=0, additional_riskgroups={}):
         """
         Inputs:
             fixed_parameters: Fixed constant model parameters (including those that can be over-ridden in uncertainty)
@@ -31,8 +31,10 @@ class SimpleTbModel(BaseModel):
 
         self.inputs = inputs
         self.scenario = scenario
-        self.riskgroups = ['']
-        self.riskgroup_proportions = {'': 1.}
+        self.riskgroups = additional_riskgroups.keys()
+        self.riskgroups.append('')
+        self.riskgroup_proportions = {'': 1. - sum(additional_riskgroups.values())}
+        self.riskgroup_proportions.update(additional_riskgroups)
 
         # define all compartments, initialise as empty and then populate
         model_compartments \

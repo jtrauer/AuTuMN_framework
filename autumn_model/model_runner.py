@@ -23,7 +23,8 @@ class ModelRunner:
                  param_ranges_unc=[], epi_outputs_to_analyse=[], scenario_implementation=[],
                  uncertainty_accepted_runs=50, burn_in=5,
                  integration_times={'start': 1900, 'finish': 2035, 'step': .05},
-                 target={'indicator': 'incidence', 'estimate': 150., 'sd': 30., 'year': 2016}):
+                 target={'indicator': 'incidence', 'estimate': 150., 'sd': 30., 'year': 2016},
+                 additional_riskgroups={}):
         """
         Instantiation method for model runner.
 
@@ -53,6 +54,7 @@ class ModelRunner:
         self.burn_in = burn_in
         self.integration_times = integration_times
         self.target = target
+        self.additional_riskgroups = additional_riskgroups
 
         # inputs obtained from spreadsheet reading and data processing
         self.inputs = data_processing.Inputs(self.country, self.fixed_parameters,
@@ -94,7 +96,8 @@ class ModelRunner:
         for scenario in self.scenarios_to_run:
 
             # name and initialise model
-            self.model_dict[scenario] = tb_model.SimpleTbModel(self.fixed_parameters, self.inputs, scenario)
+            self.model_dict[scenario] \
+                = tb_model.TbModel(self.fixed_parameters, self.inputs, scenario, self.additional_riskgroups)
 
             # describe model and integrate
             print('Running scenario ' + str(scenario) + ' conditions for ' + self.country +
@@ -188,7 +191,8 @@ class ModelRunner:
         n_accepted = 0
         prev_log_likelihood = -1e10
         run = 0
-        self.model_dict['uncertainty'] = tb_model.SimpleTbModel(self.fixed_parameters, self.inputs, 0)
+        self.model_dict['uncertainty'] \
+            = tb_model.TbModel(self.fixed_parameters, self.inputs, 0, self.additional_riskgroups)
 
         # find initial set of parameters
         new_param_list = []

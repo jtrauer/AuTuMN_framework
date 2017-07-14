@@ -37,6 +37,10 @@ fixed_parameters = {'demo_rate_birth': 20. / 1e3,
 # coverage dictionaries have keys years and values for parameter values
 time_variant_parameters = {'prop_vaccination': {1921: 0., 1980: .8, 2015: .85}}
 
+# dictionary of additional risk groups to be applied to the model with keys strings for risk group and values the
+# (constant) proportion of the population to be attributed to that risk group (e.g. {'hiv': .1, 'diabetes': .1})
+additional_riskgroups = {'hiv': .1, 'diabetes': .1}
+
 # scenario input________________________________________________________________________________________________________
 # scenario implementation, list of dictionaries with first element None for the baseline scenario and then standardised
 # keys as shown:
@@ -66,7 +70,7 @@ target_incidence = {'indicator': 'incidence',
 # code to start the model running (not for user interaction)____________________________________________________________
 model_runner = ModelRunner(country, fixed_parameters, time_variant_parameters, mode, param_ranges_unc,
                            epi_outputs_to_analyse, scenario_implementation, uncertainty_accepted_runs, burn_in,
-                           integration_times, target_incidence)
+                           integration_times, target_incidence, additional_riskgroups)
 model_runner.master_runner()
 project = Project(model_runner, plot_start_time)
 project.master_outputs_runner()
