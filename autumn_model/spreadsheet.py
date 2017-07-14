@@ -1,5 +1,4 @@
 
-from __future__ import print_function
 from xlrd import open_workbook
 from numpy import nan
 import numpy

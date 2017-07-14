@@ -1,8 +1,6 @@
 
 import tb_model
 import data_processing
-from basepop import BaseModel, make_sigmoidal_curve
-from outputs import Project
 from scipy.stats import norm, beta
 import numpy
 import tool_kit
